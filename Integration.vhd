@@ -4,7 +4,7 @@ USE IEEE.numeric_std.ALL;
 
 ENTITY Integration IS
     PORT (
-        rst, clk : IN STD_LOGIC;
+        rst, clk, enable : IN STD_LOGIC;
         signextend_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
     );
 END ENTITY Integration;
@@ -44,13 +44,14 @@ ARCHITECTURE Behavioral OF Integration IS
     END COMPONENT sign_extend;
 
 
-    SIGNAL update : STD_LOGIC_VECTOR(31 DOWNTO 0);
+    SIGNAL update, inst_address : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL instruction : STD_LOGIC_VECTOR(15 DOWNTO 0);
     SIGNAL cout : STD_LOGIC;
+    
 
 BEGIN
     PC1 : PC PORT MAP(rst, enable, clk, update, inst_address);
-    Adder1 : my_adder PORT MAP(inst_address,(1 => '1', others => '0') ,'0', update, cout);
+    Adder1 : my_nadder PORT MAP(inst_address,(1 => '1', others => '0') ,'0', update, cout);
     Cache1 : InstructionCache PORT MAP(inst_address, instruction);
     sign_extend1 : sign_extend PORT MAP(instruction, signextend_out);
 END Behavioral;

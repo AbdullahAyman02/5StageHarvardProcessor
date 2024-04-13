@@ -11,5 +11,5 @@ end entity sign_extend;
 
 architecture Behavioral of sign_extend is
 begin
-    instruction_out <= instruction_in & (instruction_in(15) & others => instruction_in(15));
+    instruction_out <= (15 downto 0 => instruction_in(15)) & instruction_in;
 end Behavioral;
