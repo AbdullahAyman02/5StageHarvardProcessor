@@ -33,7 +33,7 @@ ARCHITECTURE struct_RegisterFile OF RegisterFile IS
     END COMPONENT Mux8;
 
     SIGNAL en_write : STD_LOGIC_VECTOR(7 DOWNTO 0); -- 8 registers -> 8 enables
-    SIGNAL input1, input2, input3, input4, input5, input6, input7, input8 : STD_LOGIC_VECTOR(31 DOWNTO 0); -- 8 registers -> 8 inputs
+    SIGNAL input1, input2, input3, input4, input5, input6, input7, input8 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0'); -- 8 registers -> 8 inputs
     SIGNAL output1, output2, output3, output4, output5, output6, output7, output8 : STD_LOGIC_VECTOR(31 DOWNTO 0); -- 8 registers -> 8 outputs
     SIGNAL data_read1_sig, data_read2_sig : STD_LOGIC_VECTOR(31 DOWNTO 0); -- To make reading synchronous
 
