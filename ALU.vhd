@@ -14,18 +14,19 @@ Entity ALU is
 End ALU;
 
 Architecture ALU_Arch of ALU is
-    COMPONENT nBitFullAdder is
+    COMPONENT my_nadder is
         generic (n : integer := 32);
-		PORT( 	A,B : IN std_logic_vector(n-1 DOWNTO 0);
-			Cin : IN std_logic;                 
- 			C : OUT std_logic_vector(n-1 DOWNTO 0);
-			Cout, Overflow : OUT std_logic); 
+		PORT (
+        a, b : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+        cin : IN STD_LOGIC;
+        s : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+        cout, overflow : OUT STD_LOGIC);
 	END COMPONENT;
     signal B_bar, first_input, second_input, adder_result, alu_result: std_logic_vector (31 DOWNTO 0);
 	signal alu_and, alu_or, alu_xor, alu_not: std_logic_vector (31 DOWNTO 0);
     signal Cin_input, Cout, no_flag_change, negative_flag, zero_flag, overflow_flag, carry_overflow_change: std_logic;
 begin
-    U1: nBitFullAdder generic map(32) port map (first_input, second_input, Cin_input, adder_result, Cout, overflow_flag);
+    U1: my_nadder generic map(32) port map (first_input, second_input, Cin_input, adder_result, Cout, overflow_flag);
     B_bar <= not B;
 
     alu_and <= A and B;
@@ -38,13 +39,16 @@ begin
 
     second_input <= x"00000001" when opcode = "010" and func = "000"
                     else x"fffffffe" when opcode = "010" and func = "001"
+                    else alu_not when opcode = "010" and func = "010"
+                    else B when opcode = "100"
                     else B_bar when func = "001" or func = "010"
                     else B;
 
-    Cin_input <= '1' when func = "001" or func = "010"
+    Cin_input <= '1' when (func = "001" or func = "010") and opcode /= "100"
                 else '0';
 
-    alu_result <=   adder_result when opcode = "100" or func = "000" or func = "001" or func = "010"
+    alu_result <= A when (opcode = "001" and func = "110") or opcode = "101"
+                else adder_result when opcode = "100" or func = "000" or func = "001" or func = "010"
                 else alu_and when opcode = "001" and func = "011"
                 else alu_not when opcode = "010" and func = "011"
                 else alu_or when func = "100"
