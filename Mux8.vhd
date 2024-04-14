@@ -1,24 +1,38 @@
-Library ieee;
-use ieee.std_logic_1164.all;
 
-Entity Mux8 is 
-    Port ( 
-        in0, in1, in2, in3, in4, in5, in6, in7 : in std_logic_vector(31 downto 0);
-        S : in std_logic_vector(2 downto 0);
-        out : out std_logic_vector(31 downto 0)
-    );
-End Mux8;
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
 
-Architecture Mux8_arch of Mux8 is
+ENTITY Mux8 IS
+	GENERIC (n : INTEGER := 32);
+	PORT (
+		selectors : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+		input1, input2, input3, input4, input5, input6, input7, input8 : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+		output : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
+	);
+END Mux8;
 
-Begin
-    with S select
-        out <= in0 when "000",
-               in1 when "001",
-               in2 when "010",
-               in3 when "011",
-               in4 when "100",
-               in5 when "101",
-               in6 when "110",
-               in7 when others;
-End Mux8_arch;
+ARCHITECTURE struct_Mux8 OF Mux8 IS
+	COMPONENT Mux2 IS
+		GENERIC (n : INTEGER := 32);
+		PORT (
+			selector : IN STD_LOGIC;
+			input1, input2 : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+			output : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
+		);
+	END COMPONENT;
+	COMPONENT Mux4 IS
+		GENERIC (n : INTEGER := 32);
+		PORT (
+			selectors : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+			input1, input2, input3, input4 : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+			output : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
+		);
+	END COMPONENT;
+
+	SIGNAL x1, x2 : STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+BEGIN
+	u0 : Mux4 GENERIC MAP(n) PORT MAP(selectors(1 DOWNTO 0), input1, input2, input3, input4, x1);
+	u1 : Mux4 GENERIC MAP(n) PORT MAP(selectors(1 DOWNTO 0), input5, input6, input7, input8, x2);
+	u2 : Mux2 GENERIC MAP(n) PORT MAP(selectors(2), x1, x2, output);
+
+END struct_Mux8;
