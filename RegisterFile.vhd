@@ -35,20 +35,25 @@ ARCHITECTURE struct_RegisterFile OF RegisterFile IS
     SIGNAL en_write : STD_LOGIC_VECTOR(7 DOWNTO 0); -- 8 registers -> 8 enables
     SIGNAL input1, input2, input3, input4, input5, input6, input7, input8 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0'); -- 8 registers -> 8 inputs
     SIGNAL output1, output2, output3, output4, output5, output6, output7, output8 : STD_LOGIC_VECTOR(31 DOWNTO 0); -- 8 registers -> 8 outputs
-    SIGNAL data_read1_sig, data_read2_sig : STD_LOGIC_VECTOR(31 DOWNTO 0); -- To make reading synchronous
-
+    SIGNAL clk_flipped : STD_LOGIC;
 BEGIN
-    Register1 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(0), input1, output1);
-    Register2 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(1), input2, output2);
-    Register3 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(2), input3, output3);
-    Register4 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(3), input4, output4);
-    Register5 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(4), input5, output5);
-    Register6 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(5), input6, output6);
-    Register7 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(6), input7, output7);
-    Register8 : MyRegister GENERIC MAP(32) PORT MAP(clk, rst, en_write(7), input8, output8);
+    -- Delwa2ty, el pipeline registers el values hatetketeb feehom fel rising edge
+    -- Fa ana ka register file, 3awez a5od el data mehom fel falling edge
+    -- Fa 34an keda ha3mel not lel clk
+    -- W ba3d keda fel falling edge hasarraf el data fel register file (akenny ba write)
+    -- be 7eis en el data ely 3ayez a2raha men el register file teb2a gahza 3ala el rising lel pipeline register
+    clk_flipped <= not clk;
+    Register1 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(0), input1, output1);
+    Register2 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(1), input2, output2);
+    Register3 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(2), input3, output3);
+    Register4 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(3), input4, output4);
+    Register5 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(4), input5, output5);
+    Register6 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(5), input6, output6);
+    Register7 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(6), input7, output7);
+    Register8 : MyRegister GENERIC MAP(32) PORT MAP(clk_flipped, rst, en_write(7), input8, output8);
 
-    Mux_Read1 : Mux8 GENERIC MAP(32) PORT MAP(addr_read1, output1, output2, output3, output4, output5, output6, output7, output8, data_read1_sig);
-    Mux_Read2 : Mux8 GENERIC MAP(32) PORT MAP(addr_read2, output1, output2, output3, output4, output5, output6, output7, output8, data_read2_sig);
+    Mux_Read1 : Mux8 GENERIC MAP(32) PORT MAP(addr_read1, output1, output2, output3, output4, output5, output6, output7, output8, data_read1);
+    Mux_Read2 : Mux8 GENERIC MAP(32) PORT MAP(addr_read2, output1, output2, output3, output4, output5, output6, output7, output8, data_read2);
 
     loop_registers : FOR i IN 0 TO 7 GENERATE
         en_write(i) <= '1' WHEN (((to_integer(unsigned(addr_write1)) = i) AND en_write1 = '1') OR ((to_integer(unsigned(addr_write2)) = i) AND en_write2 = '1')) ELSE
@@ -78,13 +83,5 @@ BEGIN
     input8 <= data_write1 WHEN (addr_write1 = "111" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "111" AND en_write2 = '1') ELSE
         input8;
-
-    PROCESS (clk) -- Synchronous read
-    BEGIN
-        IF falling_edge(clk) THEN
-            data_read1 <= data_read1_sig;
-            data_read2 <= data_read2_sig;
-        END IF;
-    END PROCESS;
 
 END ARCHITECTURE struct_RegisterFile;
