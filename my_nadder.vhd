@@ -7,7 +7,7 @@ ENTITY my_nadder IS
         a, b : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
         cin : IN STD_LOGIC;
         s : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
-        cout : OUT STD_LOGIC);
+        cout, overflow : OUT STD_LOGIC);
 END my_nadder;
 
 ARCHITECTURE a_my_adder OF my_nadder IS
@@ -25,4 +25,5 @@ BEGIN
         fx : my_adder PORT MAP(a(i), b(i), temp(i), s(i), temp(i + 1));
     END GENERATE;
     cout <= temp(n);
+    overflow <= temp(n) XOR temp(n - 1);
 END a_my_adder;
