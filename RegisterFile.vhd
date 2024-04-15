@@ -33,7 +33,14 @@ ARCHITECTURE struct_RegisterFile OF RegisterFile IS
     END COMPONENT Mux8;
 
     SIGNAL en_write : STD_LOGIC_VECTOR(7 DOWNTO 0); -- 8 registers -> 8 enables
-    SIGNAL input1, input2, input3, input4, input5, input6, input7, input8 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0'); -- 8 registers -> 8 inputs
+    SIGNAL input1 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL input2 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL input3 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL input4 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL input5 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL input6 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL input7 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL input8 : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
     SIGNAL output1, output2, output3, output4, output5, output6, output7, output8 : STD_LOGIC_VECTOR(31 DOWNTO 0); -- 8 registers -> 8 outputs
     SIGNAL clk_flipped : STD_LOGIC;
 BEGIN
@@ -61,27 +68,27 @@ BEGIN
     END GENERATE;
     input1 <= data_write1 WHEN (addr_write1 = "000" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "000" AND en_write2 = '1') ELSE
-        input1;
+        (others => '0');
     input2 <= data_write1 WHEN (addr_write1 = "001" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "001" AND en_write2 = '1') ELSE
-        input2;
+        (others => '0');
     input3 <= data_write1 WHEN (addr_write1 = "010" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "010" AND en_write2 = '1') ELSE
-        input3;
+        (others => '0');
     input4 <= data_write1 WHEN (addr_write1 = "011" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "011" AND en_write2 = '1') ELSE
-        input4;
+        (others => '0');
     input5 <= data_write1 WHEN (addr_write1 = "100" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "100" AND en_write2 = '1') ELSE
-        input5;
+        (others => '0');
     input6 <= data_write1 WHEN (addr_write1 = "101" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "101" AND en_write2 = '1') ELSE
-        input6;
+        (others => '0');
     input7 <= data_write1 WHEN (addr_write1 = "110" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "110" AND en_write2 = '1') ELSE
-        input7;
+        (others => '0');
     input8 <= data_write1 WHEN (addr_write1 = "111" AND en_write1 = '1') ELSE
         data_write2 WHEN (addr_write2 = "111" AND en_write2 = '1') ELSE
-        input8;
+        (others => '0');
 
 END ARCHITECTURE struct_RegisterFile;
