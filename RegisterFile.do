@@ -28,8 +28,6 @@ add wave -position end  sim:/registerfile/output5
 add wave -position end  sim:/registerfile/output6
 add wave -position end  sim:/registerfile/output7
 add wave -position end  sim:/registerfile/output8
-add wave -position end  sim:/registerfile/data_read1_sig
-add wave -position end  sim:/registerfile/data_read2_sig
 force -freeze sim:/registerfile/clk 1 0, 0 {50 ps} -r 100
 force -freeze sim:/registerfile/rst 1 0
 force -freeze sim:/registerfile/addr_read1 000 0
