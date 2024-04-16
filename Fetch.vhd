@@ -48,8 +48,8 @@ BEGIN
     -- Components
     PC1 : PC generic map(32) PORT MAP (rst, enable, clk, pc_address, inst_address);
     InstructionCache1 : InstructionCache PORT MAP (inst_address, inst);
-    Adder : my_nadder generic map(32) PORT MAP (pc_address, x"00000001", '0', pc_address, open, open);
+    Adder : my_nadder generic map(32) PORT MAP (inst_address, x"00000001", '0', pc_address, open, open);
 
     Instruction <= inst;
-    PC_Address_out <= pc_address;
+    PC_Address_out <= inst_address;
 END Fetch_Arch;

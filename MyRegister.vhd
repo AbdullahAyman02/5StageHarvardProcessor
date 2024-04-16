@@ -17,7 +17,7 @@ BEGIN
     BEGIN -- Reset synchronously
         IF rising_edge(clk) THEN -- Write on rising edge
             IF rst = '1' THEN
-                q <= (n - 1 DOWNTO 0 => '0');
+                q <= (others => '0');
             ELSIF en = '1' THEN
                 q <= d;
             END IF;

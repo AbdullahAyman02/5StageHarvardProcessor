@@ -3,10 +3,8 @@ Use ieee.std_logic_1164.all;
 
 Entity WriteBack is
     Port ( 
-        WB_RegDest1, WB_RegDest2 : in std_logic_vector(2 downto 0);
         mem_out: in STD_LOGIC_VECTOR (31 downto 0);
         alu_out: in STD_LOGIC_VECTOR (31 downto 0);
-        RS2_data : in STD_LOGIC_VECTOR (31 downto 0);
         Controls : in STD_LOGIC_VECTOR (4 downto 0);
 
         RegData1 : out std_logic_vector(31 downto 0)

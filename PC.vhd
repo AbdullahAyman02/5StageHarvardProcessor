@@ -12,7 +12,7 @@ generic (n: integer := 32);
 end entity PC;
 
 architecture programCounter of PC is
-    SIGNAL curr_address: std_logic_vector(n-1 downto 0);
+    SIGNAL curr_address: std_logic_vector(n-1 downto 0) := (others => '0');
 begin
     process(clk, rst)
     begin

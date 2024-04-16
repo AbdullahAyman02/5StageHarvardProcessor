@@ -11,10 +11,11 @@ Entity Decode is
         RegWrite1, RegWrite2 : in std_logic;
         WB_RegDest1, WB_RegDest2 : in std_logic_vector(2 downto 0);
         WB_data1, WB_data2 : in std_logic_vector(31 downto 0);
+        Next_instruction : in std_logic_vector(15 downto 0);
 
         RS1, RS2 : out std_logic_vector(31 downto 0);
         Immediate_value : out std_logic_vector(31 downto 0);
-        Controls : out std_logic_vector(15 downto 0) 
+        Controls : out std_logic_vector(14 downto 0) 
     );
 End Decode;
 
@@ -23,7 +24,7 @@ Architecture Decode_Arch of Decode is
     PORT(
         OPCODE: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
         FUNCTION_BITS: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
-        CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+        CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(14 DOWNTO 0)
     );
     End Component;
 
@@ -49,6 +50,6 @@ begin
 
     Controller1: Controller PORT MAP(Instruction(14 downto 12), Instruction(11 downto 9), Controls);
     RegisterFile1: RegisterFile PORT MAP(Clock, Reset, Instruction(8 downto 6), Instruction(5 downto 3), RS1, RS2, RegWrite1, RegWrite2, WB_RegDest1, WB_RegDest2, WB_data1, WB_data2);
-    sign_extend1: sign_extend PORT MAP(Instruction, Immediate_value);
+    sign_extend1: sign_extend PORT MAP(Next_instruction, Immediate_value);
 
 End Decode_Arch;
