@@ -64,7 +64,7 @@ END BranchingController;
 -- 		selector choose address from decode
 -- CanBranch
 
-ARCHITECTURE OF BranchingController_arch IS
+ARCHITECTURE BranchingController_arch Of BranchingController IS
     SIGNAL Prediction_Bit : STD_LOGIC := '0';
     SIGNAL Branching_In_Execute : STD_LOGIC := '0';
     SIGNAL Branched_In_Decode_And_Should_Not_Have_Branched : STD_LOGIC := '0';
@@ -75,7 +75,7 @@ BEGIN
         -- Branching happened in decode -> Currently in execute after branching from decode
             IF Execute_Branch = '1' THEN           -- Jumped in decode, currently in execute
                 IF Execute_Conditional = '1' THEN       -- Check if the prediction was correct
-                    IF Predicition_Bit /= Zero_Flag THEN    -- Prediction was incorrect
+                    IF Prediction_Bit /= Zero_Flag THEN    -- Prediction was incorrect
                         Branch <= '1';
                         Selectors <= "10";              -- Execute Branch Update
                         Prediction_Bit <= '0';          -- Update prediction bit (since i branched in decode, my prediction was taken -> update it to not taken)
@@ -95,7 +95,7 @@ BEGIN
                         Branch <= '0';
                         Branching_In_Decode <= '0';
                     END IF;
-                ELSE IF Can_Branch = '1' THEN       -- Branching instruction in decode is unconditional, and there are no data hazards, so jump from decode
+                ELSIF Can_Branch = '1' THEN       -- Branching instruction in decode is unconditional, and there are no data hazards, so jump from decode
                     Branch <= '1';
                     Selectors <= "00";
                     Branching_In_Decode <= '1';
@@ -103,7 +103,7 @@ BEGIN
                     Branch <= '0';
                     Branching_In_Decode <= '0';
                 END IF;
-            ELSE IF Branched_In_Decode_And_Should_Not_Have_Branched = '0' THEN
+            ELSIF Branched_In_Decode_And_Should_Not_Have_Branched = '0' THEN
                 Branch <= '0';
             END IF;
         ELSE        -- No branching happened in decode, either due to data hazards, or the prediction was not taken
@@ -133,7 +133,7 @@ BEGIN
                         Branch <= '0';
                         Branching_In_Decode <= '0';
                     END IF;
-                ELSE IF Can_Branch = '1' THEN       -- Branching instruction in decode is unconditional, and there are no data hazards, so jump from decode
+                ELSIF Can_Branch = '1' THEN       -- Branching instruction in decode is unconditional, and there are no data hazards, so jump from decode
                     Branch <= '1';
                     Selectors <= "00";
                     Branching_In_Decode <= '1';
@@ -141,7 +141,7 @@ BEGIN
                     Branch <= '0';
                     Branching_In_Decode <= '0';
                 END IF;
-            ELSE IF Branching_In_Execute = '0' THEN
+            ELSIF Branching_In_Execute = '0' THEN
                 Branch <= '0';
             END IF;
         END IF;
