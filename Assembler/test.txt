@@ -20,7 +20,7 @@ OUT r7
 			.org 14			
 LDM R2, FFFF
 .org 19
-std r1, fff(r0)
+std r1, ffe(r0)
 .org 1e
 DEC R0
 .org 23
