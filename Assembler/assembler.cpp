@@ -297,9 +297,9 @@ int main()
                     }
                     else if (instr == "STD")
                     { // STD Rsrc1, EA(Rsrc2) -> Rsrc1 Rsrc2 000 << endl << imm
-                        fout << reg << reg2 << "000" << endl
+                        fout << reg2 << reg << "000" << endl
                              << convertHexToBin(imm) << endl;
-                        curr_instr += reg + reg2 + "000";
+                        curr_instr += reg2 + reg + "000";
                         curr_imm = convertHexToBin(imm);
                     }
                 }
