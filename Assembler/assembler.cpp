@@ -258,14 +258,14 @@ int main()
                     cout << "Invalid register: " << operand1 << endl;
                     return -1;
                 }
-                if (operand2.size() > 4)
-                {
-                    cout << "Invalid immediate value: " << operand2 << endl;
-                    return -1;
-                }
                 string reg = registers[operand1];
                 if (instr == "LDM")
                 { // LDM Rdest, IMM -> 000 000 Rdest << endl << imm
+                    if (operand2.size() > 4)
+                    {
+                        cout << "Invalid immediate value: " << operand2 << endl;
+                        return -1;
+                    }
                     fout << "000" << "000" << reg << endl
                          << convertHexToBin(operand2) << endl;
                     curr_instr += "000000" + reg;
@@ -282,6 +282,12 @@ int main()
                         return -1;
                     }
                     string reg2 = registers[operand3];
+                    ll imm_val = convertHexToInt(imm);
+                    if(imm_val > 4095)
+                    {
+                        cout << "Invalid immediate value: " << imm << endl;
+                        return -1;
+                    }
                     if (instr == "LDD")
                     { // LDD Rdest, EA(Rsrc1) -> Rsrc1 000 Rdest << endl << imm
                         fout << reg2 << "000" << reg << endl
@@ -328,7 +334,7 @@ int main()
         }
         else
         {
-            if (instr[0] == '1')
+            if (op[0] == '1')
             { // ADDI, SUBI
                 flag = true;
                 string operand1 = line.substr(index, 2);
@@ -350,6 +356,7 @@ int main()
                 fout << reg2 << "000" << reg1 << endl
                      << convertHexToBin(operand3) << endl;
                 curr_instr += reg2 + "000" + reg1;
+                flag = true;
                 curr_imm = convertHexToBin(operand3);
             }
             else
@@ -384,8 +391,8 @@ int main()
     // std::sort(instructions.begin(), instructions.end());
     for (int i = 0; i < max_count + 5; i++)
         if (instructions.find(i) != instructions.end())
-            memfile << convertIntToHex(i) << " : " << instructions[i] << endl;
+            memfile << convertIntToHex(i) << ": " << instructions[i] << endl;
         else
-            memfile << convertIntToHex(i) << " : 0000000000000000" << endl;
+            memfile << convertIntToHex(i) << ": 0000000000000000" << endl;
     memfile.close();
 }
