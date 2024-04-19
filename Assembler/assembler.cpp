@@ -146,7 +146,8 @@ string convertHexToBin(string hex)
 string convertIntToHex(int n)
 {
     string hex = "";
-    if(n == 0) return "0";
+    if (n == 0)
+        return "0";
     while (n)
     {
         int rem = n % 16;
@@ -158,6 +159,19 @@ string convertIntToHex(int n)
     }
     reverse(hex.begin(), hex.end());
     return hex;
+}
+
+ll convertHexToInt(string hex)
+{
+    ll num = 0;
+    for (int i = 0; i < hex.size(); i++)
+    {
+        if (hex[i] >= '0' && hex[i] <= '9')
+            num = num * 16 + (hex[i] - '0');
+        else
+            num = num * 16 + (hex[i] - 'A' + 10);
+    }
+    return num;
 }
 
 int main()
@@ -172,9 +186,10 @@ int main()
         return -1;
     }
     std::ofstream fout("output.txt");
-    std::vector<string> instructions; // Store the instructions for the mem file
+    map<int, string> instructions; // Store the instructions for the mem file
     std::string line, curr_instr, curr_imm;
     bool flag;
+    int count = 0, max_count = INT_MIN;
     while (getline(fin, line))
     {
         curr_instr = "", curr_imm = "", flag = false;
@@ -193,9 +208,11 @@ int main()
         // Get the instruction
         int index = line.find(' ');
         string instr = line.substr(0, index);
+        // Remove all whitespaces from the line
+        line.erase(remove_if(line.begin() + index, line.end(), ::isspace), line.end());
         if (instr == ".ORG")
         {
-            // TODO
+            count = convertHexToInt(line.substr(index, line.size() - index));
             continue;
         }
         if (opcode.find(instr) == opcode.end())
@@ -208,8 +225,6 @@ int main()
         curr_instr += op;
         fout << line << endl
              << op << ' ';
-        // Remove all whitespaces from the line
-        line.erase(remove_if(line.begin() + index, line.end(), ::isspace), line.end());
         // Get the number of operands
         int n = num_operands(instr);
         if (n == 0)
@@ -294,15 +309,18 @@ int main()
                 }
                 string reg1 = registers[operand1];
                 string reg2 = registers[operand2];
-                if (instr == "MOV") { // MOV Rdest, Rsrc1 -> 000 Rsrc1 Rdest
+                if (instr == "MOV")
+                { // MOV Rdest, Rsrc1 -> 000 Rsrc1 Rdest
                     fout << "000" << reg2 << reg1 << endl;
                     curr_instr += "000" + reg2 + reg1;
                 }
-                else if (instr == "SWAP") {// SWAP Rsrc1, Rsrc2 -> Rsrc1 Rsrc2 Rsrc2
+                else if (instr == "SWAP")
+                { // SWAP Rsrc1, Rsrc2 -> Rsrc1 Rsrc2 Rsrc2
                     fout << reg1 << reg2 << reg2 << endl;
                     curr_instr += reg1 + reg2 + reg2;
                 }
-                else if (instr == "CMP") {// CMP Rsrc1, Rsrc2 -> Rsrc1 Rsrc2 000
+                else if (instr == "CMP")
+                { // CMP Rsrc1, Rsrc2 -> Rsrc1 Rsrc2 000
                     fout << reg1 << reg2 << "000" << endl;
                     curr_instr += reg1 + reg2 + "000";
                 }
@@ -352,9 +370,10 @@ int main()
                 curr_instr += reg2 + reg3 + reg1;
             }
         }
-        instructions.push_back(curr_instr);
+        instructions[count++] = curr_instr;
         if (flag)
-            instructions.push_back(curr_imm);
+            instructions[count++] = curr_imm;
+        max_count = max(max_count, count);
     }
     fin.close();
     fout.close();
@@ -362,7 +381,11 @@ int main()
     memfile << "// memory data file (do not edit the following line - required for mem load use)" << endl
             << "// instance=/integration/Fetch1/InstructionCache1/inst" << endl
             << "// format=mti addressradix=h dataradix=b version=1.0 wordsperline=1" << endl;
-    for (int i = 0; i < instructions.size(); i++)
-        memfile << convertIntToHex(i) << ": " << instructions[i] << endl;
+    // std::sort(instructions.begin(), instructions.end());
+    for (int i = 0; i < max_count + 5; i++)
+        if (instructions.find(i) != instructions.end())
+            memfile << convertIntToHex(i) << " : " << instructions[i] << endl;
+        else
+            memfile << convertIntToHex(i) << " : 0000000000000000" << endl;
     memfile.close();
 }
