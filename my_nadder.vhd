@@ -24,6 +24,8 @@ BEGIN
     loop1 : FOR i IN 0 TO n - 1 GENERATE
         fx : my_adder PORT MAP(a(i), b(i), temp(i), s(i), temp(i + 1));
     END GENERATE;
-    cout <= temp(n);
+    with cin select
+            cout <= temp(n) WHEN '0',
+            not temp(n) WHEN OTHERS;
     overflow <= temp(n) XOR temp(n - 1);
 END a_my_adder;

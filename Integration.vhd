@@ -151,7 +151,7 @@ BEGIN
     -- bit 48 -> Interrupt
 
 
-    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(108), Memory_WB_Out(107), Memory_WB_Out(72 DOWNTO 70), Memory_WB_Out(69 DOWNTO 67), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls);
+    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(108), Memory_WB_Out(107), Memory_WB_Out(72 DOWNTO 70), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls);
     
     -- DE_D <= RS1_DATA & RS2_DATA & RS1 & RS2 & RDEST & Immediate_value & OPCODE & CONTROLS & INT & PC & IMM;
 
