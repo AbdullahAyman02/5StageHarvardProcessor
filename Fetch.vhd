@@ -15,19 +15,23 @@ END Fetch;
 ARCHITECTURE Fetch_Arch OF Fetch IS
     COMPONENT PC IS
     GENERIC (n : INTEGER := 32);
-        PORT (
-            rst, enable, clk : IN STD_LOGIC;
-            update : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
-            inst_address : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
-        );
+    PORT (
+        rst, enable, clk : IN STD_LOGIC;
+        update : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+        rst_m : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+        inst_address : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
+    );
     END COMPONENT;
 
     COMPONENT InstructionCache IS
-        PORT (
-            address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-            instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
-            -- No exceptions yet in Phase 1
-        );
+    PORT (
+        address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+        clk : IN STD_LOGIC;
+        rst : IN STD_LOGIC;
+        rst_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0); 
+        instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+        -- No exceptions yet in Phase 1
+    );
     END COMPONENT;
 
     COMPONENT my_nadder IS
@@ -43,11 +47,11 @@ ARCHITECTURE Fetch_Arch OF Fetch IS
     SIGNAL inst_address : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL inst : STD_LOGIC_VECTOR(15 DOWNTO 0);
     SIGNAL pc_address : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
-
+    SIGNAL rst_address : STD_LOGIC_VECTOR(15 DOWNTO 0) := (15 DOWNTO 0 => '0');
 BEGIN
     -- Components
-    PC1 : PC generic map(32) PORT MAP (rst, enable, clk, pc_address, inst_address);
-    InstructionCache1 : InstructionCache PORT MAP (inst_address, inst);
+    PC1 : PC generic map(32) PORT MAP (rst, enable, clk, pc_address, rst_address, inst_address);
+    InstructionCache1 : InstructionCache PORT MAP (inst_address, clk, rst, rst_address, inst);
     Adder : my_nadder generic map(32) PORT MAP (inst_address, x"00000001", '0', pc_address, open, open);
 
     Instruction <= inst;

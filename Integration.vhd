@@ -40,6 +40,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             WB_RegDest1, WB_RegDest2 : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             WB_data1, WB_data2 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
             Next_Instruction : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            Fetch_rst : in std_logic;
 
             RS1, RS2 : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
             Immediate_value : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -107,8 +108,8 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL Fetch_PC : STD_LOGIC_VECTOR(31 DOWNTO 0);
 
     SIGNAL Fetch_Decode_Reset : STD_LOGIC;
-    SIGNAL Fetch_Decode_In : STD_LOGIC_VECTOR(48 DOWNTO 0);
-    SIGNAL Fetch_Decode_Out : STD_LOGIC_VECTOR(48 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL Fetch_Decode_In : STD_LOGIC_VECTOR(49 DOWNTO 0);
+    SIGNAL Fetch_Decode_Out : STD_LOGIC_VECTOR(49 DOWNTO 0) := (OTHERS => '0');
     
     SIGNAL Decode_RS1_Data : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL Decode_RS2_Data : STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -140,10 +141,10 @@ BEGIN
     
     -- FD_D <= INT & PC_Address & Instruction;
 
-    Fetch_Decode_In <= Int & Fetch_PC & Fetch_Instruction;
-    Fetch_Decode_Reset <= rst or Fetch_Decode_Out(15);
+    Fetch_Decode_In <= rst & Int & Fetch_PC & Fetch_Instruction;
+    Fetch_Decode_Reset <= Fetch_Decode_Out(49) or Fetch_Decode_Out(15);
     
-    FETCH_DECODE : MyRegister GENERIC MAP(49) PORT MAP(CLK, Fetch_Decode_Reset, '1', Fetch_Decode_In, Fetch_Decode_Out);
+    FETCH_DECODE : MyRegister GENERIC MAP(50) PORT MAP(CLK, Fetch_Decode_Reset, '1', Fetch_Decode_In, Fetch_Decode_Out);
 
     -- The concatenation of the bits is as follows:
     -- bits 15 to 0 -> Instruction
@@ -151,10 +152,12 @@ BEGIN
     -- bit 48 -> Interrupt
 
 
-    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(108), Memory_WB_Out(107), Memory_WB_Out(72 DOWNTO 70), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls);
+    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(108), Memory_WB_Out(107), Memory_WB_Out(72 DOWNTO 70), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Fetch_Decode_Out(49), Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls);
     
     -- DE_D <= RS1_DATA & RS2_DATA & RS1 & RS2 & RDEST & Immediate_value & OPCODE & CONTROLS & INT & PC & IMM;
 
+
+    
     Decode_Execute_In <= Fetch_Decode_Out(15) & Fetch_Decode_Out(47 DOWNTO 16) & Fetch_Decode_Out(48) & Decode_Controls & Fetch_Decode_Out(14 DOWNto 9) & Decode_Immediate_Value & Fetch_Decode_Out(2 DOWNTO 0) & Fetch_Decode_Out(5 DOWNTO 3) & Fetch_Decode_Out(8 DOWNTO 6) & Decode_RS2_Data & Decode_RS1_Data;  
 
     DECODE_EXECUTE : MyRegister GENERIC MAP(160) PORT MAP(CLK, RST, '1', Decode_Execute_In, Decode_Execute_Out);

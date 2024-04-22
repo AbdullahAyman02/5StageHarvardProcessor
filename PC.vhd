@@ -1,28 +1,36 @@
-library IEEE;
-use IEEE.numeric_std.all;
-use IEEE.std_logic_1164.all;
+LIBRARY IEEE;
+USE IEEE.numeric_std.ALL;
+USE IEEE.std_logic_1164.ALL;
 
-entity PC is
-generic (n: integer := 32);
-    port (
-        rst, enable, clk: IN std_logic;
-	    update: in std_logic_vector(n-1 downto 0);
-        inst_address: OUT std_logic_vector(n-1 downto 0)
+ENTITY PC IS
+    GENERIC (n : INTEGER := 32);
+    PORT (
+        rst, enable, clk : IN STD_LOGIC;
+        update : IN STD_LOGIC_VECTOR(n - 1 DOWNTO 0);
+        rst_m : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+        inst_address : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
     );
-end entity PC;
+END ENTITY PC;
 
-architecture programCounter of PC is
-    SIGNAL curr_address: std_logic_vector(n-1 downto 0) := (others => '0');
-begin
-    process(clk, rst)
-    begin
-        if rst = '1' then
-            curr_address <= (others => '0');
-        elsif rising_edge(clk) and enable='1' then
-            curr_address <= update;
-        end if;
-    end process;
+ARCHITECTURE programCounter OF PC IS
+    SIGNAL curr_address : STD_LOGIC_VECTOR(n - 1 DOWNTO 0) := (OTHERS => '0');
+BEGIN
+    PROCESS (clk, rst)
+        VARIABLE rst_counter : INTEGER := 0;
+    BEGIN
+        IF rising_edge(clk) THEN
+            IF rst = '1' AND rst_counter = 0 THEN
+                rst_counter := 1;
+                curr_address <= "0000000000000000" & rst_m;
+            ELSIF rst_counter = 1 THEN
+                curr_address <= rst_m & curr_address(15 DOWNTO 0);
+                rst_counter := rst_counter - 1;
+            ELSIF enable = '1' THEN
+                curr_address <= update;
+            END IF;
+        END IF;
+    END PROCESS;
 
     inst_address <= curr_address;
 
-end architecture programCounter;
+END ARCHITECTURE programCounter;

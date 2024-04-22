@@ -5,6 +5,9 @@ USE IEEE.numeric_std.ALL;
 ENTITY InstructionCache IS
     PORT (
         address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+        clk : IN STD_LOGIC;
+        rst : IN STD_LOGIC;
+        rst_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0); 
         instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
         -- No exceptions yet in Phase 1
     );
@@ -14,5 +17,16 @@ ARCHITECTURE struct_instruction_cache OF InstructionCache IS
     TYPE slot IS ARRAY(0 TO 1023) OF STD_LOGIC_VECTOR(15 DOWNTO 0);
     SIGNAL inst : slot;
 BEGIN
+    process(clk, rst)
+        VARIABLE rst_counter : INTEGER := 0;
+    begin
+        if rst = '1' and rst_counter = 0 then
+            rst_counter := 1;
+            rst_address <= inst(0);
+        elsif falling_edge(clk) and rst_counter = 1 then
+            rst_address <= inst(1);
+            rst_counter := 0;
+        end if;
+    end process;
     instruction <= inst(to_integer(unsigned(address)));
 END struct_instruction_cache;
