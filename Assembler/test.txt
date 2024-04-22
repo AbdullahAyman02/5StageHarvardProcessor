@@ -11,61 +11,18 @@
 			# several places in the file and the assembler should handle it in Phase 2
 
 LDM R0, 1
-.org 5
 LDM R1, AAAA
-.org A
-OUT r7
-.org f
-			in 				r6	
-			.org 14			
 LDM R2, FFFF
-.org 19
-std r1, ffe(r0)
-.org 1e
 DEC R0
-.org 23
-
-	MOV R4, R1	
-.org 28
+MOV R4, R1
 NOT R1
-.org 2d
 MOV R3, R0
-.org 32
 DEC R0
-.org 37
 CMP R4, R2
-.org 3c
 OR R5, R1, R4
-.org 41
 MOV R6, R0
-.org 46
 CMP R2, R4
-.org 4b
 CMP R5, R0
-.org 50
 OR R7, R4, R3
-.org 55
 NOT R6
-.org 5a
 DEC R0
-.org 5f
-ldd r0, 200(r1)
-.org 64
-neg r5
-.org 69
-inc R5
-.org 6e
-add r2, r3, r4
-.org 73
-
-sub r2, r3, r4
-.org 78
-and r2, r3, r4
-.org 7d
-or r2, r3, r4
-.org 82
-xor r2, r3, r4
-.org 87
-addi r2, r3, 2020
-.org 8c
-subi r2, r3, 10

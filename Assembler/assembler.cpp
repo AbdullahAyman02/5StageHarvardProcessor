@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <algorithm>
+#include <climits>
 using namespace std;
 
 #define ll long long
@@ -389,9 +390,11 @@ int main()
             << "// instance=/integration/Fetch1/InstructionCache1/inst" << endl
             << "// format=mti addressradix=h dataradix=b version=1.0 wordsperline=1" << endl;
     // std::sort(instructions.begin(), instructions.end());
-    for (int i = 0; i < max_count + 5; i++)
-        if (instructions.find(i) != instructions.end())
-            memfile << convertIntToHex(i) << ": " << instructions[i] << endl;
+    memfile << convertIntToHex(0) << ": 0000000000000010" << endl;
+    memfile << convertIntToHex(1) << ": 0000000000000000" << endl;
+    for (int i = 2; i < max_count + 7; i++)
+        if (instructions.find(i-2) != instructions.end())
+            memfile << convertIntToHex(i) << ": " << instructions[i - 2] << endl;
         else
             memfile << convertIntToHex(i) << ": 0000000000000000" << endl;
     memfile.close();
