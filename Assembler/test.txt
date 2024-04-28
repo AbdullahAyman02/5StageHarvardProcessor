@@ -7,16 +7,14 @@
 # ---------- Don't forget to Reset before you start anything ---------- #
 # LDM, NOT, DEC, MOV, OR, CMP
 
-.org 0			# means the code start at address zero, this could be written in 
+			# means the code start at address zero, this could be written in 
 			# several places in the file and the assembler should handle it in Phase 2
 
 LDM R0, 1
 LDM R1, AAAA
 LDM R2, FFFF
-PROTECT R2
-.org F		# to prevent hazards
-STD R0, 0000(R2)
-.org 15		# to prevent hazards
-FREE R2
-.org 20		# to prevent hazards
-STD R0, 0000(R2)
+.org e
+PROTECT R0
+STD R2, 0000(R0)
+FREE R0
+STD R2, 0000(R0)
