@@ -18,7 +18,7 @@ map<string, string> opcode = {
     {"STD", "1100010"},
     {"LDD", "1100000"},
     {"PROTECT", "0101000"},
-    {"FREE", "0101000"},
+    {"FREE", "0101001"},
     {"CALL", "0110000"},
     {"RET", "0110100"},
     {"RTI", "0110101"},
@@ -188,18 +188,26 @@ int main()
     }
     std::ofstream fout("output.txt");
     map<int, string> instructions; // Store the instructions for the mem file
+    instructions[0] = "0000000000000100";
+    instructions[1] = "0000000000000000";
+    instructions[2] = "0000000000000000";   // Interrupt A0
+    instructions[3] = "0000000000000000";   // Interrupt A1
     std::string line, curr_instr, curr_imm;
     bool flag;
-    int count = 0, max_count = INT_MIN;
+    int count = 4, max_count = INT_MIN;
     while (getline(fin, line))
     {
         curr_instr = "", curr_imm = "", flag = false;
-        // If the line contains '#' or is empty, ignore it
-        if (line.size() == 0 || find(line.begin(), line.end(), '#') != line.end())
-            continue;
         // Remove leading whitespaces
         line.erase(line.begin(), find_if(line.begin(), line.end(), [](int ch)
                                          { return !isspace(ch); }));
+        // If line contains '#' then remove everything after it
+        if (line.find('#') != string::npos)
+            line = line.substr(0, line.find('#'));
+        // If the line is empty, ignore it
+        if (line.empty())
+            continue;
+        cout << line << endl;
         // convert each letter to caps
         for (int i = 0; i < line.size(); i++)
         {
@@ -214,6 +222,7 @@ int main()
         if (instr == ".ORG")
         {
             count = convertHexToInt(line.substr(index, line.size() - index));
+            cout << count << endl;
             continue;
         }
         if (opcode.find(instr) == opcode.end())
@@ -390,11 +399,9 @@ int main()
             << "// instance=/integration/Fetch1/InstructionCache1/inst" << endl
             << "// format=mti addressradix=h dataradix=b version=1.0 wordsperline=1" << endl;
     // std::sort(instructions.begin(), instructions.end());
-    memfile << convertIntToHex(0) << ": 0000000000000010" << endl;
-    memfile << convertIntToHex(1) << ": 0000000000000000" << endl;
-    for (int i = 2; i < max_count + 7; i++)
-        if (instructions.find(i-2) != instructions.end())
-            memfile << convertIntToHex(i) << ": " << instructions[i - 2] << endl;
+    for (int i = 0; i < max_count + 5; i++)
+        if (instructions.find(i) != instructions.end())
+            memfile << convertIntToHex(i) << ": " << instructions[i] << endl;
         else
             memfile << convertIntToHex(i) << ": 0000000000000000" << endl;
     memfile.close();

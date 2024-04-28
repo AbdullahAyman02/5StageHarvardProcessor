@@ -81,6 +81,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             PC : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
             -- Int , stack pointer
 
+            Exception : OUT STD_LOGIC;
             Mem_out : OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
         );
     END COMPONENT;
@@ -129,6 +130,7 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL Execute_Memory_In : STD_LOGIC_VECTOR(151 DOWNTO 0);
     SIGNAL Execute_Memory_Out : STD_LOGIC_VECTOR(151 DOWNTO 0);
 
+    SIGNAL Exception : STD_LOGIC := '0';
     SIGNAL Memory_Mem_Out : STD_LOGIC_VECTOR(31 DOWNTO 0);
 
     SIGNAL Memory_WB_In : STD_LOGIC_VECTOR(110 DOWNTO 0);
@@ -198,7 +200,7 @@ BEGIN
     -- SP 151-120
 
 
-    Memory1 : Memory PORT MAP(clk, rst, Execute_Memory_Out(31 DOWNTO 0), Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(67 DOWNTO 64), Execute_Memory_Out(86 DOWNTO 77), Execute_Memory_Out(118 DOWNTO 87), Memory_Mem_Out);
+    Memory1 : Memory PORT MAP(clk, rst, Execute_Memory_Out(31 DOWNTO 0), Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(67 DOWNTO 64), Execute_Memory_Out(86 DOWNTO 77), Execute_Memory_Out(118 DOWNTO 87), Exception, Memory_Mem_Out);
 
     Memory_WB_In <= '0' & Execute_Memory_Out(86) & Execute_Memory_Out(81 DOWNTO 80) & Execute_Memory_Out(78 DOWNTO 77) & Memory_Mem_Out & Execute_Memory_Out(76 DOWNTO 74) & Execute_Memory_Out(73 DOWNTO 71) & Execute_Memory_Out(70 DOWNTO 68) & Execute_Memory_Out(63 DOWNTO 32) & Execute_Memory_Out(31 DOWNTO 0);
     
