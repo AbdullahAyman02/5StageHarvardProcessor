@@ -194,12 +194,16 @@ int main()
     while (getline(fin, line))
     {
         curr_instr = "", curr_imm = "", flag = false;
-        // If the line contains '#' or is empty, ignore it
-        if (line.size() == 0 || find(line.begin(), line.end(), '#') != line.end())
-            continue;
         // Remove leading whitespaces
         line.erase(line.begin(), find_if(line.begin(), line.end(), [](int ch)
                                          { return !isspace(ch); }));
+        // If line contains '#' then remove everything after it
+        if (line.find('#') != string::npos)
+            line = line.substr(0, line.find('#'));
+        // If the line is empty, ignore it
+        if (line.empty())
+            continue;
+        cout << line << endl;
         // convert each letter to caps
         for (int i = 0; i < line.size(); i++)
         {
