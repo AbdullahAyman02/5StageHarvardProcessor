@@ -11,7 +11,7 @@ ENTITY ProtectionUnit IS
 END ProtectionUnit;
 
 ARCHITECTURE struct_ProtectionUnit OF ProtectionUnit IS
-    SIGNAL memory : STD_LOGIC_VECTOR(4096 DOWNTO 0) := (OTHERS => '0');
+    SIGNAL memory : STD_LOGIC_VECTOR(0 TO 4096) := (OTHERS => '0');
 BEGIN
     PROCESS (Clk, Rst)
     BEGIN
