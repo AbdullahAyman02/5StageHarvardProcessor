@@ -40,7 +40,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             WB_RegDest1, WB_RegDest2 : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             WB_data1, WB_data2 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
             Next_Instruction : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
-            Fetch_rst : in std_logic;
+            Fetch_rst : IN STD_LOGIC;
 
             RS1, RS2 : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
             Immediate_value : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -79,20 +79,48 @@ ARCHITECTURE Integration_arch OF Integration IS
             --    RDest : in STD_LOGIC_VECTOR (2 downto 0);
             Controls : IN STD_LOGIC_VECTOR (9 DOWNTO 0);
             PC : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
-            -- Int , stack pointer
+            INT : IN STD_LOGIC;
+            StackPointer : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+            INT_FSM : IN STD_LOGIC;
 
+            Exception : OUT STD_LOGIC;
             Mem_out : OUT STD_LOGIC_VECTOR (31 DOWNTO 0)
         );
     END COMPONENT;
     COMPONENT WriteBack IS
+    Port ( 
+        mem_out: in STD_LOGIC_VECTOR (31 downto 0);
+        alu_out: in STD_LOGIC_VECTOR (31 downto 0);
+        Controls : in STD_LOGIC_VECTOR (4 downto 0);
+        Int_Fsm : in STD_LOGIC;
+
+        RegData1 : out std_logic_vector(31 downto 0);
+        Rti : out std_logic;
+        Ret_rti : out std_logic
+    );
+    END COMPONENT;
+
+    COMPONENT SP IS
         PORT (
-            mem_out : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
-            alu_out : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
-            Controls : IN STD_LOGIC_VECTOR (4 DOWNTO 0);
-
-            RegData1 : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
-
+            clk : IN STD_LOGIC;
+            rst : IN STD_LOGIC;
+            func : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+            int : IN STD_LOGIC;
+            memRead : IN STD_LOGIC;
+            loadUse : IN STD_LOGIC;
+            addressSelector : IN STD_LOGIC;
+            stackPointer : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
         );
+    END COMPONENT;
+
+    COMPONENT InterruptFSM IS
+    PORT (
+        clk : IN STD_LOGIC;
+        int : IN STD_LOGIC;
+        rti : IN STD_LOGIC;
+        stall : OUT STD_LOGIC;
+        flagsOrPC : OUT STD_LOGIC
+    );
     END COMPONENT;
 
     -- SIGNAL PC_Address : STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -110,7 +138,7 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL Fetch_Decode_Reset : STD_LOGIC;
     SIGNAL Fetch_Decode_In : STD_LOGIC_VECTOR(49 DOWNTO 0);
     SIGNAL Fetch_Decode_Out : STD_LOGIC_VECTOR(49 DOWNTO 0) := (OTHERS => '0');
-    
+
     SIGNAL Decode_RS1_Data : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL Decode_RS2_Data : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL Decode_Immediate_value : STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -126,41 +154,53 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL Execute_Flags : STD_LOGIC_VECTOR(3 DOWNTO 0);
     SIGNAL Execute_Output_Port : STD_LOGIC_VECTOR(31 DOWNTO 0);
 
-    SIGNAL Execute_Memory_In : STD_LOGIC_VECTOR(151 DOWNTO 0);
-    SIGNAL Execute_Memory_Out : STD_LOGIC_VECTOR(151 DOWNTO 0);
+    SIGNAL Execute_Memory_In : STD_LOGIC_VECTOR(148 DOWNTO 0);
+    SIGNAL Execute_Memory_Out : STD_LOGIC_VECTOR(148 DOWNTO 0);
 
+    SIGNAL Exception : STD_LOGIC := '0';
     SIGNAL Memory_Mem_Out : STD_LOGIC_VECTOR(31 DOWNTO 0);
 
-    SIGNAL Memory_WB_In : STD_LOGIC_VECTOR(110 DOWNTO 0);
-    SIGNAL Memory_WB_Out : STD_LOGIC_VECTOR(110 DOWNTO 0);
+    SIGNAL Memory_WB_In : STD_LOGIC_VECTOR(107 DOWNTO 0);
+    SIGNAL Memory_WB_Out : STD_LOGIC_VECTOR(107 DOWNTO 0);
 
     SIGNAL WB_DATA1_TO_DECODE : STD_LOGIC_VECTOR(31 DOWNTO 0);
+    SIGNAL WB_Rti : STD_LOGIC;
+    SIGNAL WB_Ret_rti : STD_LOGIC;
+
+    SIGNAL StackPointer : STD_LOGIC_VECTOR(31 DOWNTO 0);
+
+    SIGNAL IntrerruptFSM_Stall : STD_LOGIC;
+    SIGNAL IntrerruptFSM_FlagsOrPC : STD_LOGIC;
+
+    SIGNAL PC_Enable : STD_LOGIC := '1';
+    SIGNAL Fetch_Decode_Enable : STD_LOGIC := '1';
+    SIGNAL Decode_Execute_Enable : STD_LOGIC := '1';
 
 BEGIN
-    Fetch1 : Fetch PORT MAP(clk, rst, '1', Fetch_Instruction, Fetch_PC);
-    
+    PC_Enable <= not (IntrerruptFSM_Stall);
+
+    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, Fetch_Instruction, Fetch_PC);
+
     -- FD_D <= INT & PC_Address & Instruction;
 
     Fetch_Decode_In <= rst & Int & Fetch_PC & Fetch_Instruction;
-    Fetch_Decode_Reset <= Fetch_Decode_Out(49) or Fetch_Decode_Out(15);
-    
-    FETCH_DECODE : MyRegister GENERIC MAP(50) PORT MAP(CLK, Fetch_Decode_Reset, '1', Fetch_Decode_In, Fetch_Decode_Out);
+    Fetch_Decode_Reset <= Fetch_Decode_Out(49) OR Fetch_Decode_Out(15);
+    Fetch_Decode_Enable <= not (IntrerruptFSM_Stall);
+
+    FETCH_DECODE : MyRegister GENERIC MAP(50) PORT MAP(CLK, Fetch_Decode_Reset, Fetch_Decode_Enable, Fetch_Decode_In, Fetch_Decode_Out);
 
     -- The concatenation of the bits is as follows:
     -- bits 15 to 0 -> Instruction
     -- bits 47 to 16 -> PC
     -- bit 48 -> Interrupt
+    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(105), Memory_WB_Out(104), Memory_WB_Out(69 DOWNTO 67), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Fetch_Decode_Out(49), Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls);
 
-
-    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(108), Memory_WB_Out(107), Memory_WB_Out(72 DOWNTO 70), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Fetch_Decode_Out(49), Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls);
-    
     -- DE_D <= RS1_DATA & RS2_DATA & RS1 & RS2 & RDEST & Immediate_value & OPCODE & CONTROLS & INT & PC & IMM;
 
+    Decode_Execute_In <= Fetch_Decode_Out(15) & Fetch_Decode_Out(47 DOWNTO 16) & Fetch_Decode_Out(48) & Decode_Controls & Fetch_Decode_Out(14 DOWNTO 9) & Decode_Immediate_Value & Fetch_Decode_Out(2 DOWNTO 0) & Fetch_Decode_Out(5 DOWNTO 3) & Fetch_Decode_Out(8 DOWNTO 6) & Decode_RS2_Data & Decode_RS1_Data;
+    Decode_Execute_Enable <= not (IntrerruptFSM_Stall);
 
-    
-    Decode_Execute_In <= Fetch_Decode_Out(15) & Fetch_Decode_Out(47 DOWNTO 16) & Fetch_Decode_Out(48) & Decode_Controls & Fetch_Decode_Out(14 DOWNto 9) & Decode_Immediate_Value & Fetch_Decode_Out(2 DOWNTO 0) & Fetch_Decode_Out(5 DOWNTO 3) & Fetch_Decode_Out(8 DOWNTO 6) & Decode_RS2_Data & Decode_RS1_Data;  
-
-    DECODE_EXECUTE : MyRegister GENERIC MAP(160) PORT MAP(CLK, RST, '1', Decode_Execute_In, Decode_Execute_Out);
+    DECODE_EXECUTE : MyRegister GENERIC MAP(160) PORT MAP(CLK, RST, Decode_Execute_Enable, Decode_Execute_In, Decode_Execute_Out);
 
     -- The concatenation of the bits is as follows:
     -- RS1 Data 31-0
@@ -176,44 +216,43 @@ BEGIN
     -- Imm 159
 
     Execute_Controls <= Decode_Execute_Out(125) & Decode_Execute_Out(115 DOWNTO 114);
-    
-    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls , Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(31 DOWNTO 0), Memory_WB_Out(63 DOWNTO 32), Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(105), Memory_WB_Out(76 DOWNTO 73), Decode_Execute_Out(159), Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Execute_Output_Port);
-    
+
+    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls, Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(31 DOWNTO 0), Memory_WB_Out(63 DOWNTO 32), Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(105), Memory_WB_Out(76 DOWNTO 73), Decode_Execute_Out(159), Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Execute_Output_Port);
+
     -- EM_D <= RS2_DATA & ALU_RESULT & FLAGS & RS1 & RS2 & RDEST & CONTROLS & PC & INT & SP;
 
-    Execute_Memory_In <= x"00000000" & Decode_Execute_Out(126) & Decode_Execute_Out(158 DOWNTO 127) & Decode_Execute_Out(124 DOWNTO 118) & Decode_Execute_Out(113 DOWNTO 111) & Decode_Execute_Out(72 DOWNTO 70) & Decode_Execute_Out(69 DOWNTO 67) & Decode_Execute_Out(66 DOWNTO 64) & Execute_Flags & Execute_Alu_Result & Execute_RS2_Data;
+    StackPointerCircuit : SP PORT MAP(clk, rst, Decode_Execute_Out(107 DOWNTO 105), Decode_Execute_Out(126), Decode_Execute_Out(124), '0', Decode_Execute_Out(113), StackPointer);
 
-    EXECUTE_MEMORY : MyRegister GENERIC MAP(152) PORT MAP(CLK, RST, '1', Execute_Memory_In, Execute_Memory_Out);
+    InterruptFSM1 : InterruptFSM PORT MAP(clk, Decode_Execute_Out(126), Decode_Execute_Out(111), IntrerruptFSM_Stall, IntrerruptFSM_FlagsOrPC);
+
+    Execute_Memory_In <= StackPointer & Decode_Execute_Out(126) & Decode_Execute_Out(158 DOWNTO 127) & Decode_Execute_Out(124 DOWNTO 118) & Decode_Execute_Out(113 DOWNTO 111) & Decode_Execute_Out(72 DOWNTO 70) & Decode_Execute_Out(66 DOWNTO 64) & Execute_Flags & Execute_Alu_Result & Execute_RS2_Data;
+
+    EXECUTE_MEMORY : MyRegister GENERIC MAP(149) PORT MAP(CLK, RST, '1', Execute_Memory_In, Execute_Memory_Out);
 
     -- The concatenation of the bits is as follows:
     -- RS2 Data 31-0
     -- ALU Result 63-32
     -- Flags 67-64
     -- RS1 70-68
-    -- RS2 73-71
-    -- RDest 76-74
-    -- Controls 86-77
-    -- PC 118-87
-    -- Int 119
-    -- SP 151-120
+    -- RDest 73-71
+    -- Controls 83-74
+    -- PC 115-84
+    -- Int 116
+    -- SP 148-117
+    Memory1 : Memory PORT MAP(clk, rst, Execute_Memory_Out(31 DOWNTO 0), Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(67 DOWNTO 64), Execute_Memory_Out(83 DOWNTO 74), Execute_Memory_Out(115 DOWNTO 84), Execute_Memory_Out(116), Execute_Memory_Out(148 DOWNTO 117), IntrerruptFSM_FlagsOrPC, Exception, Memory_Mem_Out);
 
+    Memory_WB_In <= IntrerruptFSM_FlagsOrPC & Execute_Memory_Out(83) & Execute_Memory_Out(78 DOWNTO 77) & Execute_Memory_Out(75 DOWNTO 74) & Memory_Mem_Out & Execute_Memory_Out(73 DOWNTO 71) & Execute_Memory_Out(70 DOWNTO 68) & Execute_Memory_Out(63 DOWNTO 32) & Execute_Memory_Out(31 DOWNTO 0);
 
-    Memory1 : Memory PORT MAP(clk, rst, Execute_Memory_Out(31 DOWNTO 0), Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(67 DOWNTO 64), Execute_Memory_Out(86 DOWNTO 77), Execute_Memory_Out(118 DOWNTO 87), Memory_Mem_Out);
-
-    Memory_WB_In <= '0' & Execute_Memory_Out(86) & Execute_Memory_Out(81 DOWNTO 80) & Execute_Memory_Out(78 DOWNTO 77) & Memory_Mem_Out & Execute_Memory_Out(76 DOWNTO 74) & Execute_Memory_Out(73 DOWNTO 71) & Execute_Memory_Out(70 DOWNTO 68) & Execute_Memory_Out(63 DOWNTO 32) & Execute_Memory_Out(31 DOWNTO 0);
-    
-    MEMORY_WRITEBACK : MyRegister GENERIC MAP(111) PORT MAP(CLK, RST, '1', Memory_WB_In, Memory_WB_Out);
+    MEMORY_WRITEBACK : MyRegister GENERIC MAP(108) PORT MAP(CLK, RST, '1', Memory_WB_In, Memory_WB_Out);
 
     -- The concatenation of the bits is as follows:
     -- RS2 Data 31-0
     -- ALU Result 63-32
     -- RS1 66-64
-    -- RS2 69-67
-    -- RDest 72-70
-    -- Mem out 104-73
-    -- Controls 108-105
-
-
+    -- RDest 69-67
+    -- Mem out 101-70
+    -- Controls 106-102
+    -- Int FSM 107
     -- Output of this register - not handled yet.
-    WriteBack1 : WriteBack PORT MAP(Memory_WB_Out(104 DOWNTO 73), Memory_WB_Out(63 DOWNTO 32), Memory_WB_Out(109 DOWNTO 105), WB_DATA1_TO_DECODE);
+    WriteBack1 : WriteBack PORT MAP(Memory_WB_Out(101 DOWNTO 70), Memory_WB_Out(63 DOWNTO 32), Memory_WB_Out(106 DOWNTO 102), Memory_WB_Out(107), WB_DATA1_TO_DECODE, WB_Rti, WB_Ret_rti);
 END ARCHITECTURE Integration_arch;

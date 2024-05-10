@@ -6,9 +6,11 @@ Entity WriteBack is
         mem_out: in STD_LOGIC_VECTOR (31 downto 0);
         alu_out: in STD_LOGIC_VECTOR (31 downto 0);
         Controls : in STD_LOGIC_VECTOR (4 downto 0);
+        Int_Fsm : in STD_LOGIC;
 
-        RegData1 : out std_logic_vector(31 downto 0)
-        
+        RegData1 : out std_logic_vector(31 downto 0);
+        Rti : out std_logic;
+        Ret_rti : out std_logic
     );
 End WriteBack;
 
@@ -23,6 +25,8 @@ Architecture WriteBack_atch of WriteBack is
     End Component;
 
 Begin
-    
+    Rti <= Int_Fsm and Controls(0);
+    Ret_rti <= Int_Fsm and Controls(1);
+
     Mux2_1 : Mux2 generic map(32) PORT MAP (Controls(4), alu_out, mem_out, RegData1);
 End WriteBack_atch;

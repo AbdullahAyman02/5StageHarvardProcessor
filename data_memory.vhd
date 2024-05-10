@@ -24,7 +24,9 @@ BEGIN
             IF write_enable = '1' THEN
                 memory(to_integer(unsigned(address))) <= data_in(15 DOWNTO 0);
                 memory(to_integer(unsigned(address)) + 1) <= data_in(31 DOWNTO 16);
-            ELSIF read_enable = '1' THEN
+            END IF;
+        ELSIF falling_edge(clk) THEN
+            IF read_enable = '1' THEN
                 data_out <= memory(to_integer(unsigned(address)) + 1) & memory(to_integer(unsigned(address)));
             END IF;
         END IF;
