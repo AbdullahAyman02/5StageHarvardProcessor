@@ -79,6 +79,16 @@ bool checkNeedsR3(string instr)
     return find(temp.begin(), temp.end(), instr) != temp.end();
 }
 
+bool isValidHex(string hex)
+{
+    for (int i = 0; i < hex.size(); i++)
+    {
+        if (!((hex[i] >= '0' && hex[i] <= '9') || (hex[i] >= 'A' && hex[i] <= 'F')))
+            return false;
+    }
+    return true;
+}
+
 string convertHexToBin(string hex)
 {
     string bin = "";
@@ -215,19 +225,43 @@ int main()
                 line[i] = toupper(line[i]);
         }
         // Get the instruction
-        int index = line.find(' ');
+        int index = line.find_first_of(" \t\n\r\f\v");
+        cout << "index: " << index << endl;
         string instr = line.substr(0, index);
+        if (count < 4 && isValidHex(instr))
+        {
+            cout << instr << endl;
+            instructions[count++] = convertHexToBin(instr);
+            continue;
+        }
         // Remove all whitespaces from the line
         line.erase(remove_if(line.begin() + index, line.end(), ::isspace), line.end());
         if (instr == ".ORG")
         {
             count = convertHexToInt(line.substr(index, line.size() - index));
             cout << count << endl;
+            if(count < 4)
+            {
+                getline(fin, line);
+                // Remove leading whitespaces
+                line.erase(line.begin(), find_if(line.begin(), line.end(), [](int ch)
+                                                { return !isspace(ch); }));
+                // If line contains '#' then remove everything after it
+                if (line.find('#') != string::npos)
+                    line = line.substr(0, line.find('#'));
+                // If the line is empty, ignore it
+                if (line.empty())
+                    continue;
+                cout << line << endl;
+                curr_instr = convertHexToBin(line);
+                instructions[count++] = curr_instr;
+            }
             continue;
         }
         if (opcode.find(instr) == opcode.end())
         {
             cout << "Invalid instruction: " << instr << endl;
+            cout << instr << instr.length() << endl;
             return -1;
         }
         // Get the opcode
@@ -241,7 +275,6 @@ int main()
         {
             fout << "000000000" << endl;
             curr_instr += "000000000";
-            continue;
         }
         else if (n == 1)
         {
@@ -387,9 +420,12 @@ int main()
                 curr_instr += reg2 + reg3 + reg1;
             }
         }
+        cout << convertIntToHex(count) << ": " << curr_instr << endl;
         instructions[count++] = curr_instr;
-        if (flag)
+        if (flag) {
+            cout << convertIntToHex(count) << ": " << curr_imm << endl;
             instructions[count++] = curr_imm;
+        }
         max_count = max(max_count, count);
     }
     fin.close();
@@ -400,8 +436,9 @@ int main()
             << "// format=mti addressradix=h dataradix=b version=1.0 wordsperline=1" << endl;
     // std::sort(instructions.begin(), instructions.end());
     for (int i = 0; i < max_count + 5; i++)
-        if (instructions.find(i) != instructions.end())
+        if (instructions.find(i) != instructions.end()) {
             memfile << convertIntToHex(i) << ": " << instructions[i] << endl;
+        }
         else
             memfile << convertIntToHex(i) << ": 0000000000000000" << endl;
     memfile.close();
