@@ -24,6 +24,9 @@ ARCHITECTURE Integration_arch OF Integration IS
             clk : IN STD_LOGIC;
             rst : IN STD_LOGIC;
             enable : IN STD_LOGIC;
+            int : IN STD_LOGIC;
+            ret_rti : IN STD_LOGIC;
+            ret_rti_m : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
 
             Instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             PC_Address_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
@@ -88,16 +91,16 @@ ARCHITECTURE Integration_arch OF Integration IS
         );
     END COMPONENT;
     COMPONENT WriteBack IS
-    Port ( 
-        mem_out: in STD_LOGIC_VECTOR (31 downto 0);
-        alu_out: in STD_LOGIC_VECTOR (31 downto 0);
-        Controls : in STD_LOGIC_VECTOR (4 downto 0);
-        Int_Fsm : in STD_LOGIC;
+        PORT (
+            mem_out : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+            alu_out : IN STD_LOGIC_VECTOR (31 DOWNTO 0);
+            Controls : IN STD_LOGIC_VECTOR (4 DOWNTO 0);
+            Int_Fsm : IN STD_LOGIC;
 
-        RegData1 : out std_logic_vector(31 downto 0);
-        Rti : out std_logic;
-        Ret_rti : out std_logic
-    );
+            RegData1 : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+            Rti : OUT STD_LOGIC;
+            Ret_rti : OUT STD_LOGIC
+        );
     END COMPONENT;
 
     COMPONENT SP IS
@@ -114,13 +117,23 @@ ARCHITECTURE Integration_arch OF Integration IS
     END COMPONENT;
 
     COMPONENT InterruptFSM IS
-    PORT (
-        clk : IN STD_LOGIC;
-        int : IN STD_LOGIC;
-        rti : IN STD_LOGIC;
-        stall : OUT STD_LOGIC;
-        flagsOrPC : OUT STD_LOGIC
-    );
+        PORT (
+            clk : IN STD_LOGIC;
+            int : IN STD_LOGIC;
+            rti : IN STD_LOGIC;
+            stall : OUT STD_LOGIC;
+            flagsOrPC : OUT STD_LOGIC
+        );
+    END COMPONENT;
+
+    COMPONENT RetRtiCounter IS
+        PORT (
+            clk : IN STD_LOGIC;
+            rst : IN STD_LOGIC;
+            ret_rti : IN STD_LOGIC;
+            enable : IN STD_LOGIC;
+            stall : OUT STD_LOGIC;
+        );
     END COMPONENT;
 
     -- SIGNAL PC_Address : STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -172,20 +185,24 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL IntrerruptFSM_Stall : STD_LOGIC;
     SIGNAL IntrerruptFSM_FlagsOrPC : STD_LOGIC;
 
+    SIGNAL RetRtiCounterStall : STD_LOGIC := '0';
+
     SIGNAL PC_Enable : STD_LOGIC := '1';
     SIGNAL Fetch_Decode_Enable : STD_LOGIC := '1';
     SIGNAL Decode_Execute_Enable : STD_LOGIC := '1';
 
 BEGIN
-    PC_Enable <= not (IntrerruptFSM_Stall);
+    PC_Enable <= NOT (IntrerruptFSM_Stall);
 
-    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, Fetch_Instruction, Fetch_PC);
+    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, int, WB_Ret_rti, WB_DATA1_TO_DECODE, Fetch_Instruction, Fetch_PC);
+
+    RetRtiCounter1 : RetRtiCounter PORT MAP(clk, rst, Decode_Controls(1), Fetch_Decode_Enable, RetRtiCounterStall);
 
     -- FD_D <= INT & PC_Address & Instruction;
 
     Fetch_Decode_In <= rst & Int & Fetch_PC & Fetch_Instruction;
-    Fetch_Decode_Reset <= Fetch_Decode_Out(49) OR Fetch_Decode_Out(15);
-    Fetch_Decode_Enable <= not (IntrerruptFSM_Stall);
+    Fetch_Decode_Reset <= Fetch_Decode_Out(49) OR Fetch_Decode_Out(15) OR RetRtiCounterStall;
+    Fetch_Decode_Enable <= NOT (IntrerruptFSM_Stall);
 
     FETCH_DECODE : MyRegister GENERIC MAP(50) PORT MAP(CLK, Fetch_Decode_Reset, Fetch_Decode_Enable, Fetch_Decode_In, Fetch_Decode_Out);
 
@@ -198,7 +215,7 @@ BEGIN
     -- DE_D <= RS1_DATA & RS2_DATA & RS1 & RS2 & RDEST & Immediate_value & OPCODE & CONTROLS & INT & PC & IMM;
 
     Decode_Execute_In <= Fetch_Decode_Out(15) & Fetch_Decode_Out(47 DOWNTO 16) & Fetch_Decode_Out(48) & Decode_Controls & Fetch_Decode_Out(14 DOWNTO 9) & Decode_Immediate_Value & Fetch_Decode_Out(2 DOWNTO 0) & Fetch_Decode_Out(5 DOWNTO 3) & Fetch_Decode_Out(8 DOWNTO 6) & Decode_RS2_Data & Decode_RS1_Data;
-    Decode_Execute_Enable <= not (IntrerruptFSM_Stall);
+    Decode_Execute_Enable <= NOT (IntrerruptFSM_Stall);
 
     DECODE_EXECUTE : MyRegister GENERIC MAP(160) PORT MAP(CLK, RST, Decode_Execute_Enable, Decode_Execute_In, Decode_Execute_Out);
 
