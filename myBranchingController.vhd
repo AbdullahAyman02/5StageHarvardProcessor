@@ -95,6 +95,4 @@ BEGIN
         branch_out <= two_bit_PC_selector_signal(0) NAND two_bit_PC_selector_signal(1);
         two_bit_PC_selector <= two_bit_PC_selector_signal;
     END PROCESS;
-    branch_out <= PC_selector(0) NAND PC_selector(1);
-    two_bit_PC_selector <= PC_selector;
 END branching_controller_arch;
