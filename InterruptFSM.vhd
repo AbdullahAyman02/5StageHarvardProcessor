@@ -19,16 +19,27 @@ ARCHITECTURE InterruptFSM_arch OF InterruptFSM IS
 
 BEGIN
     PROCESS (clk)
+    VARIABLE counter : INTEGER := 0;
     BEGIN
         IF falling_edge(clk) THEN
             IF int = '1' OR rti = '1' THEN
                 IF prevStall = '0' THEN
                     prevStall <= '1';
-                    tempFlagsOrPC <= '0';
-                ELSE
-                    prevStall <= '0';
                     tempFlagsOrPC <= '1';
+                        counter := 2;
+                ELSIF counter = 0 THEN
+                    prevStall <= '0';
+                    tempFlagsOrPC <= '0';
+                ELSIF counter = 1 THEN
+                    prevStall <= '0';
                 END IF;
+            END IF;
+        ELSIF rising_edge(clk) THEN
+            IF counter > 0 THEN
+                counter := counter - 1;
+            END IF;
+            IF counter = 0 THEN
+                tempFlagsOrPC <= '0';
             END IF;
         END IF;
     END PROCESS;

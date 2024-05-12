@@ -6,6 +6,7 @@ ENTITY CONTROLLER IS
             OPCODE: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             FUNCTION_BITS: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             RESET : IN STD_LOGIC;
+            INT : IN STD_LOGIC;
             
             CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(14 DOWNTO 0)
         );
@@ -39,9 +40,9 @@ BEGIN
     MEM_TO_REG              <= '1'  WHEN (OPCODE = "100" AND FUNCTION_BITS(1) = '0') 
                                     ELSE '0';
    
-    BRANCH                  <= '1'  WHEN (OPCODE(2 DOWNTO 1) = "11") 
+    BRANCH                  <= '1'  WHEN (OPCODE(2 DOWNTO 1) = "11" AND FUNCTION_BITS(2) = '0')
                                     ELSE '0';
-    UNCONDITIONAL_BRANCH    <= '1'  WHEN ((OPCODE = "110") OR (OPCODE = "111" AND FUNCTION_BITS(0) = '1')) 
+    UNCONDITIONAL_BRANCH    <= '1'  WHEN ((OPCODE = "110" AND FUNCTION_BITS(2) = '0') OR (OPCODE = "111" AND FUNCTION_BITS(0) = '1')) 
                                     ELSE '0';  
    
     IN_ENABLE               <= '1'  WHEN (OPCODE = "011" AND FUNCTION_BITS(0) = '1') 
@@ -57,7 +58,9 @@ BEGIN
     RTI                     <= '1' WHEN (OPCODE = "110" AND FUNCTION_BITS(0) = '1')
                                     ELSE '0';
    
-    CONTROL_SIGNALS <= ALU_OPERATION & MEM_READ & MEM_WRITE & SELECT_PC & PROTECT & FREE & REG_WRITE & REG_WRITE_2 & BRANCH & UNCONDITIONAL_BRANCH 
-                    & IN_ENABLE & OUT_ENABLE & ADDRESS_SELECTOR & RET_OR_RTI & RTI 
-                    WHEN RESET = '0' ELSE (OTHERS => '0'); 
+    CONTROL_SIGNALS <=  "001100000000100" WHEN INT = '1' ELSE   
+                        ALU_OPERATION & MEM_READ & MEM_WRITE & SELECT_PC & PROTECT & FREE & REG_WRITE & REG_WRITE_2 & BRANCH & UNCONDITIONAL_BRANCH 
+                        & IN_ENABLE & OUT_ENABLE & ADDRESS_SELECTOR & RET_OR_RTI & RTI 
+                        WHEN RESET = '0' 
+                        ELSE (OTHERS => '0'); 
 END ARCHITECTURE;

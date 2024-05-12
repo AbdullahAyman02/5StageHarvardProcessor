@@ -25,8 +25,8 @@ Architecture WriteBack_atch of WriteBack is
     End Component;
 
 Begin
-    Rti <= Int_Fsm and Controls(0);
-    Ret_rti <= Int_Fsm and Controls(1);
+    Rti <= (not Int_Fsm) and Controls(0);
+    Ret_rti <= ((not Int_Fsm) and Controls(1) and (not Controls(0))) or (Controls(0) and Int_Fsm);
 
     Mux2_1 : Mux2 generic map(32) PORT MAP (Controls(4), alu_out, mem_out, RegData1);
 End WriteBack_atch;

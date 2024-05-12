@@ -16,6 +16,7 @@ Entity Execution is
         Rti_flag : in std_logic_vector(3 downto 0);
         Imm : in std_logic; -- will be removed after phase 1
 
+        RS1_data_out : out std_logic_vector(31 downto 0);
         RS2_data_out : out std_logic_vector(31 downto 0);
         ALU_result : out std_logic_vector(31 downto 0);
         Flags: out std_logic_vector(3 downto 0);
@@ -79,6 +80,7 @@ FlagRegister_1: FlagRegister port map (Clock, Reset, Rti, alu_flags, Rti_flag, f
 
 ALU_1: ALU port map (operand1_out, operand2_out, Opcode(5 downto 3), Opcode(2 downto 0), flag_register_flags, Controls(2), alu_out_result, alu_flags);
 
+RS1_data_out <= operand1_out;
 RS2_data_out <= store_swap_out;
 ALU_result <= alu_or_input;
 Flags <= alu_flags;
