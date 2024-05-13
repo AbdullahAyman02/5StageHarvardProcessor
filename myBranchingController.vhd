@@ -25,7 +25,7 @@ ARCHITECTURE branching_controller_arch OF myBranchingController IS
     SIGNAL two_bit_PC_selector_signal : STD_LOGIC_VECTOR(1 DOWNTO 0);
     SIGNAL was_there_a_data_hazard_in_decode : STD_LOGIC := '0';
 BEGIN
-    PROCESS (a_branch_instruction_is_in_decode, a_branch_instruction_is_in_execute, decode_branch_conditional, execute_branch_conditional, can_branch, zero_flag, branched_in_decode)
+    PROCESS (a_branch_instruction_is_in_decode, a_branch_instruction_is_in_execute, decode_branch_unconditional, execute_branch_unconditional, can_branch, zero_flag, branched_in_decode)
         VARIABLE will_branch_in_execute : STD_LOGIC := '0';
     BEGIN
         IF (branched_in_decode = '1') THEN

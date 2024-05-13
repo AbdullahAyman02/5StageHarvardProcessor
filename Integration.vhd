@@ -159,6 +159,21 @@ ARCHITECTURE Integration_arch OF Integration IS
         );
     END COMPONENT;
 
+    COMPONENT InterruptLatch IS
+        PORT (
+            CLK : IN STD_LOGIC;
+            Reset : IN STD_LOGIC;
+            Interrupt : IN STD_LOGIC;
+            Stall : IN STD_LOGIC;
+            From_ret_rti_counter : IN STD_LOGIC;
+            Immediate_bit_from_fetch : IN STD_LOGIC;
+            Branch : IN STD_LOGIC;
+            -- Branched_from_decode : IN STD_LOGIC;
+            -- Reset_previous_latch : OUT STD_LOGIC;
+            Latched_interrupt : OUT STD_LOGIC
+        );
+    END COMPONENT;
+
     -- SIGNAL PC_Address : STD_LOGIC_VECTOR(31 DOWNTO 0);
     -- SIGNAL Instruction : STD_LOGIC_VECTOR(15 DOWNTO 0);
     -- SIGNAL INT : STD_LOGIC := '0';
@@ -222,16 +237,33 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL TwoBitPCSelector : STD_LOGIC_VECTOR(1 DOWNTO 0);
     SIGNAL BranchOut : STD_LOGIC;
 
+    SIGNAL LatchedInterrupt : STD_LOGIC := '0';
+
 BEGIN
     PC_Enable <= NOT (IntrerruptFSM_Stall);
 
-    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, x"00000000", BranchOut, Fetch_Instruction, Fetch_PC, PC_To_Store);
+    -- Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, x"00000000", BranchOut, Fetch_Instruction, Fetch_PC, PC_To_Store);
+    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, LatchedInterrupt, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, x"00000000", BranchOut, Fetch_Instruction, Fetch_PC, PC_To_Store);
 
     RetRtiCounter1 : RetRtiCounter PORT MAP(clk, rst, Decode_Controls(1), '1', RetRtiCounterStall);
 
+    InterruptLatch1 : InterruptLatch PORT MAP(
+        clk => clk,
+        Reset => rst,
+        Interrupt => int,
+        Stall => IntrerruptFSM_Stall,
+        From_ret_rti_counter => RetRtiCounterStall,
+        Immediate_bit_from_fetch => Fetch_Decode_Out(15),
+        Branch => BranchOut,
+        -- Branched_from_decode => BranchedInDecode,
+        -- Reset_previous_latch => open,
+        Latched_interrupt => LatchedInterrupt
+    );
+
     -- FD_D <= INT & PC_Address & Instruction;
 
-    Fetch_Decode_In <= rst & Int & PC_To_Store & Fetch_Instruction;
+    -- Fetch_Decode_In <= rst & Int & PC_To_Store & Fetch_Instruction;
+    Fetch_Decode_In <= rst & LatchedInterrupt & PC_To_Store & Fetch_Instruction;
     Fetch_Decode_Reset <= Fetch_Decode_Out(49) OR Fetch_Decode_Out(15) OR RetRtiCounterStall OR BranchOut;
     Fetch_Decode_Enable <= NOT (IntrerruptFSM_Stall);
 
