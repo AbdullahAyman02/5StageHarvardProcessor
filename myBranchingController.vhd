@@ -1,7 +1,7 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 
-ENTITY branching_controller IS
+ENTITY myBranchingController IS
     PORT (
         a_branch_instruction_is_in_decode : IN STD_LOGIC; -- 1 if a branch instruction is in decode stage, 0 otherwise
         a_branch_instruction_is_in_execute : IN STD_LOGIC; -- 1 if a branch instruction is in execute stage, 0 otherwise
@@ -16,9 +16,9 @@ ENTITY branching_controller IS
         will_branch_in_decode : OUT STD_LOGIC; -- 1 if the branch will be taken in decode stage, 0 otherwise
         branch_out : OUT STD_LOGIC
     );
-END branching_controller;
+END myBranchingController;
 
-ARCHITECTURE branching_controller_arch OF branching_controller IS
+ARCHITECTURE branching_controller_arch OF myBranchingController IS
     SIGNAL prediction_bit : STD_LOGIC := '0';
     SIGNAL two_bit_PC_selector_signal : STD_LOGIC_VECTOR(1 DOWNTO 0) := "11";
     SIGNAL was_there_a_data_hazard_in_decode : STD_LOGIC := '0';

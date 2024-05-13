@@ -26,6 +26,7 @@ Architecture Decode_Arch of Decode is
             OPCODE: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             FUNCTION_BITS: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             RESET : IN STD_LOGIC;
+            INT : IN STD_LOGIC;
             
             CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(14 DOWNTO 0)
         );
@@ -52,7 +53,7 @@ Architecture Decode_Arch of Decode is
 
 begin
 
-    Controller1: Controller PORT MAP(Instruction(14 downto 12), Instruction(11 downto 9), Fetch_rst, Controls);
+    Controller1: Controller PORT MAP(Instruction(14 downto 12), Instruction(11 downto 9), Fetch_rst, Int, Controls);
     RegisterFile1: RegisterFile PORT MAP(Clock, Reset, Instruction(8 downto 6), Instruction(5 downto 3), RS1, RS2, RegWrite1, RegWrite2, WB_RegDest1, WB_RegDest2, WB_data1, WB_data2);
     sign_extend1: sign_extend PORT MAP(Instruction(11 downto 9), Next_instruction, Immediate_value);
 
