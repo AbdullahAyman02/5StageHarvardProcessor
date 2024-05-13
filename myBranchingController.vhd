@@ -3,6 +3,7 @@ USE ieee.std_logic_1164.ALL;
 
 ENTITY myBranchingController IS
     PORT (
+        clk : IN STD_LOGIC;
         a_branch_instruction_is_in_decode : IN STD_LOGIC; -- 1 if a branch instruction is in decode stage, 0 otherwise
         a_branch_instruction_is_in_execute : IN STD_LOGIC; -- 1 if a branch instruction is in execute stage, 0 otherwise
         decode_branch_unconditional : IN STD_LOGIC; -- 1 if the instruction in decode stage is a conditional branch, 0 otherwise
@@ -23,18 +24,19 @@ ARCHITECTURE branching_controller_arch OF myBranchingController IS
     SIGNAL two_bit_PC_selector_signal : STD_LOGIC_VECTOR(1 DOWNTO 0) := "11";
     SIGNAL was_there_a_data_hazard_in_decode : STD_LOGIC := '0';
 BEGIN
-    PROCESS (a_branch_instruction_is_in_decode, a_branch_instruction_is_in_execute, decode_branch_unconditional, execute_branch_unconditional, can_branch, zero_flag, branched_in_decode)
+    PROCESS (clk)
         VARIABLE will_branch_in_execute : STD_LOGIC := '0';
     BEGIN
-        IF (any_stall = '0') THEN
+        IF (any_stall = '0' AND falling_edge(clk)) THEN
             IF (branched_in_decode = '1') THEN
+                will_branch_in_decode <= '0';
                 IF (a_branch_instruction_is_in_execute = '1') THEN
                     IF (execute_branch_unconditional = '0') THEN
                         IF (prediction_bit /= zero_flag) THEN
                             will_branch_in_execute := '1';
                             two_bit_PC_selector_signal <= "10";
-                        ELSE
                             prediction_bit <= '0';
+                        ELSE
                             will_branch_in_execute := '0';
                             two_bit_PC_selector_signal <= "11";
                         END IF;
