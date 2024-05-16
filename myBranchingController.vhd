@@ -6,8 +6,8 @@ ENTITY myBranchingController IS
         clk : IN STD_LOGIC;
         a_branch_instruction_is_in_decode : IN STD_LOGIC; -- 1 if a branch instruction is in decode stage, 0 otherwise
         a_branch_instruction_is_in_execute : IN STD_LOGIC; -- 1 if a branch instruction is in execute stage, 0 otherwise
-        decode_branch_unconditional : IN STD_LOGIC; -- 1 if the instruction in decode stage is a conditional branch, 0 otherwise
-        execute_branch_unconditional : IN STD_LOGIC; -- 1 if the instruction in execute stage is a conditional branch, 0 otherwise
+        decode_branch_conditional : IN STD_LOGIC; -- 1 if the instruction in decode stage is a conditional branch, 0 otherwise
+        execute_branch_conditional : IN STD_LOGIC; -- 1 if the instruction in execute stage is a conditional branch, 0 otherwise
         branched_in_decode : IN STD_LOGIC; -- 1 if i already have branched in decode stage, 0 otherwise
         can_branch : IN STD_LOGIC; -- 1 if the branch can be taken in decode stage, 0 otherwise
         zero_flag : IN STD_LOGIC; -- 1 if the zero flag is set after execute stage, 0 otherwise
@@ -16,7 +16,6 @@ ENTITY myBranchingController IS
         two_bit_PC_selector : OUT STD_LOGIC_VECTOR(1 DOWNTO 0); -- 2 bit selector for the PC, 00 for decode branch update, 01 for execute branch update, 10 for register address, 11 for normal PC update +2
         will_branch_in_decode : OUT STD_LOGIC; -- 1 if the branch will be taken in decode stage, 0 otherwise
         branch_out : OUT STD_LOGIC
-
     );
 END myBranchingController;
 
@@ -32,7 +31,7 @@ BEGIN
             IF (branched_in_decode = '1') THEN
                 will_branch_in_decode <= '0';
                 IF (a_branch_instruction_is_in_execute = '1') THEN
-                    IF (execute_branch_unconditional = '0') THEN
+                    IF (execute_branch_conditional = '1') THEN
                         IF (prediction_bit /= zero_flag) THEN
                             will_branch_in_execute_var := '1';
                             two_bit_PC_selector_var := "10";
@@ -48,7 +47,7 @@ BEGIN
                 END IF;
             ELSE
                 IF (a_branch_instruction_is_in_execute = '1') THEN
-                    IF (execute_branch_unconditional = '0') THEN
+                    IF (execute_branch_conditional = '1') THEN
                         IF (zero_flag = '1') THEN
                             IF (was_there_a_data_hazard_in_decode = '1') THEN
                                 two_bit_PC_selector_var := "01";
@@ -70,7 +69,7 @@ BEGIN
                 END IF;
 
                 IF (a_branch_instruction_is_in_decode = '1' AND will_branch_in_execute_var = '0') THEN
-                    IF (decode_branch_unconditional = '0') THEN
+                    IF (decode_branch_conditional = '1') THEN
                         IF (prediction_bit = '1' AND can_branch = '1') THEN
                             will_branch_in_decode <= '1';
                             two_bit_PC_selector_var := "00";
