@@ -139,12 +139,96 @@ BEGIN
         ADDRESS_TO_BRANCH_TO <= (others => 'X');
         
         WAIT FOR 10 ns;
-        ASSERT MUX_1_SELECTOR = "100" AND MUX_2_SELECTOR = "101" AND MUX_3_SELECTOR = "101" and CAN_BRANCH = '1'
+        ASSERT MUX_1_SELECTOR = "100" AND MUX_2_SELECTOR = "101" AND MUX_3_SELECTOR = "101"
         REPORT "TEST CASE 0: All inputs 0, addresses X" SEVERITY ERROR;
 
+        --TEST CASE 1
+        -- MUX 1: PREV ALU DEST
+        -- MUX 2: PREV ALU SRC 2
+        -- MUX 3: PREV ALU SRC 2 (Eventhough the memory will also write to this location, the value from the ALU will be the one taken)
+        CURR_ALU_SRC_1 <= X"00000005";        
+        CURR_ALU_SRC_2 <= X"00000A00";
+        
+        PREV_ALU_DEST <= X"00000005";
+        PREV_MEM_DEST <= (others => 'X');
+        
+        PREV_ALU_SRC_2 <= X"00000A00";
+        PREV_MEM_SRC_2 <= X"00000A00";
+        
+        CURR_ALU_NEEDS_SRC_1 <= '1';
+        CURR_ALU_NEEDS_SRC_2 <= '1';
+        
+        PREV_ALU_USES_DEST <= '1';
+        PREV_MEM_USES_DEST <= '0';
+        
+        PREV_ALU_IS_SWAP <= '1';
+        PREV_MEM_IS_SWAP <= '1';
+        
+        IMMEDIATE_VALUE_NOT_INSTRUCTION <= '0';
+        
+        ADDRESS_TO_BRANCH_TO <= (others => 'X');
+        
+        WAIT FOR 10 ns;
+        ASSERT MUX_1_SELECTOR = "000" AND MUX_2_SELECTOR = "001" AND MUX_3_SELECTOR = "001"
+        REPORT "TEST CASE 1: MUX 1: PREV ALU DEST, MUX 2: PREV ALU SRC 2, MUX 3: PREV MEM SRC 2" SEVERITY ERROR;
+
+        --TEST CASE 2
+        -- Branching instruction and the branch matches the AU destination
+        CURR_ALU_SRC_1 <= (others => 'X');
+        CURR_ALU_SRC_2 <= (others => 'X');
+        
+        PREV_ALU_DEST <= X"00000A00";
+        PREV_MEM_DEST <= (others => 'X');
+        
+        PREV_ALU_SRC_2 <= (others => 'X');
+        PREV_MEM_SRC_2 <= (others => 'X');
+        
+        CURR_ALU_NEEDS_SRC_1 <= '0';
+        CURR_ALU_NEEDS_SRC_2 <= '0';
+        
+        PREV_ALU_USES_DEST <= '1';
+        PREV_MEM_USES_DEST <= '0';
+        
+        PREV_ALU_IS_SWAP <= '0';
+        PREV_MEM_IS_SWAP <= '0';
+        
+        IMMEDIATE_VALUE_NOT_INSTRUCTION <= '0';
+        
+        ADDRESS_TO_BRANCH_TO <= X"00000A00";
+        
+        WAIT FOR 10 ns;
+        ASSERT MUX_1_SELECTOR = "100" AND MUX_2_SELECTOR = "101" AND MUX_3_SELECTOR = "101" AND CAN_BRANCH = '0'
+        REPORT "TEST CASE 2: Can not branch" SEVERITY ERROR;
+
+        --TEST CASE 3
+        -- This is an immediate value so all selectors should be default and can branch = 1
+        CURR_ALU_SRC_1 <= X"00000A00";
+        CURR_ALU_SRC_2 <= (others => 'X');
+        
+        PREV_ALU_DEST <= (others => 'X');
+        PREV_MEM_DEST <= (others => 'X');
+        
+        PREV_ALU_SRC_2 <= (others => 'X');
+        PREV_MEM_SRC_2 <= X"00000A00";
+        
+        CURR_ALU_NEEDS_SRC_1 <= '0';
+        CURR_ALU_NEEDS_SRC_2 <= '0';
+        
+        PREV_ALU_USES_DEST <= '0';
+        PREV_MEM_USES_DEST <= '0';
+        
+        PREV_ALU_IS_SWAP <= '0';
+        PREV_MEM_IS_SWAP <= '1';
+        
+        IMMEDIATE_VALUE_NOT_INSTRUCTION <= '1';
+        
+        ADDRESS_TO_BRANCH_TO <= (others => 'X');
+        
+        WAIT FOR 10 ns;
+        ASSERT MUX_1_SELECTOR = "100" AND MUX_2_SELECTOR = "110" AND MUX_3_SELECTOR = "101"
+        REPORT "TEST CASE 0: All inputs 0, addresses X" SEVERITY ERROR;
 
     WAIT;
     END PROCESS;
    
-
 END;
