@@ -2,22 +2,23 @@ Library ieee;
 USE ieee.std_logic_1164.ALL;
 
 Entity Decode is
-    Port (
-        Clock : in std_logic;
-        Reset : in std_logic;
-        Instruction : in std_logic_vector(15 downto 0);
-        Pc : in std_logic_vector(31 downto 0);
-        Int : in std_logic;
-        RegWrite1, RegWrite2 : in std_logic;
-        WB_RegDest1, WB_RegDest2 : in std_logic_vector(2 downto 0);
-        WB_data1, WB_data2 : in std_logic_vector(31 downto 0);
-        Next_instruction : in std_logic_vector(15 downto 0);
-        Fetch_rst : in std_logic;
+    PORT (
+            Clock : IN STD_LOGIC;
+            Reset : IN STD_LOGIC;
+            Instruction : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            Pc : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+            Int : IN STD_LOGIC;
+            RegWrite1, RegWrite2 : IN STD_LOGIC;
+            WB_RegDest1, WB_RegDest2 : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+            WB_data1, WB_data2 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+            Next_instruction : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            Fetch_rst : IN STD_LOGIC;
 
-        RS1, RS2 : out std_logic_vector(31 downto 0);
-        Immediate_value : out std_logic_vector(31 downto 0);
-        Controls : out std_logic_vector(14 downto 0) 
-    );
+            RS1, RS2 : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+            Immediate_value : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+            Controls : OUT STD_LOGIC_VECTOR(14 DOWNTO 0);
+            ValidRS1, ValidRS2 : OUT STD_LOGIC
+        );
 End Decode;
 
 Architecture Decode_Arch of Decode is
@@ -25,10 +26,12 @@ Architecture Decode_Arch of Decode is
     PORT(
             OPCODE: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             FUNCTION_BITS: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+            IMMEDIATE: IN STD_LOGIC;
             RESET : IN STD_LOGIC;
             INT : IN STD_LOGIC;
             
-            CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(14 DOWNTO 0)
+            CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(14 DOWNTO 0);
+            ValidRS1, ValidRS2: OUT STD_LOGIC
         );
     End Component;
 
@@ -53,7 +56,7 @@ Architecture Decode_Arch of Decode is
 
 begin
 
-    Controller1: Controller PORT MAP(Instruction(14 downto 12), Instruction(11 downto 9), Fetch_rst, Int, Controls);
+    Controller1: Controller PORT MAP(Instruction(14 downto 12), Instruction(11 downto 9), Instruction(15), Fetch_rst, Int, Controls, ValidRS1, ValidRS2);
     RegisterFile1: RegisterFile PORT MAP(Clock, Reset, Instruction(8 downto 6), Instruction(5 downto 3), RS1, RS2, RegWrite1, RegWrite2, WB_RegDest1, WB_RegDest2, WB_data1, WB_data2);
     sign_extend1: sign_extend PORT MAP(Instruction(11 downto 9), Next_instruction, Immediate_value);
 

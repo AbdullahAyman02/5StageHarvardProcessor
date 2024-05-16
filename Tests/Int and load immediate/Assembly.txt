@@ -1,0 +1,25 @@
+#	All numbers are in hex format
+#	We always start by reset signal (in phase one, it just reset all registers)
+# 	This is a commented line
+#	You should ignore empty lines and commented ones
+# 	add as much NOPs (or for example `LDM R7, 0` (a filling instruction)) as you want to avoid hazards (as a software solution, just in 
+#          phase one)
+# ---------- Don't forget to Reset before you start anything ---------- #
+# LDM, NOT, DEC, MOV, OR, CMP
+
+			# means the code start at address zero, this could be written in 
+			# several places in the file and the assembler should handle it in Phase 2
+
+.org 2
+0040
+0000
+LDM R0, 1
+LDM R1, 2
+LDM R2, 40
+ldm r3, 567
+Not R0
+Sub R4, R0, R1
+.org 40
+ADD R3, R3,R2
+AND R3,r3,r3
+rti

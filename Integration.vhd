@@ -32,6 +32,8 @@ ARCHITECTURE Integration_arch OF Integration IS
             execute_address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
             correction_address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
             branch : IN STD_LOGIC;
+            immediate : IN STD_LOGIC;
+            ret_rti_stall : IN STD_LOGIC;
 
             Instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             PC_Address_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -48,12 +50,13 @@ ARCHITECTURE Integration_arch OF Integration IS
             RegWrite1, RegWrite2 : IN STD_LOGIC;
             WB_RegDest1, WB_RegDest2 : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             WB_data1, WB_data2 : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-            Next_Instruction : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            Next_instruction : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
             Fetch_rst : IN STD_LOGIC;
 
             RS1, RS2 : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
             Immediate_value : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
-            Controls : OUT STD_LOGIC_VECTOR(14 DOWNTO 0)
+            Controls : OUT STD_LOGIC_VECTOR(14 DOWNTO 0);
+            ValidRS1, ValidRS2 : OUT STD_LOGIC
         );
     END COMPONENT;
     COMPONENT Execution IS
@@ -139,38 +142,66 @@ ARCHITECTURE Integration_arch OF Integration IS
             rst : IN STD_LOGIC;
             ret_rti : IN STD_LOGIC;
             enable : IN STD_LOGIC;
+            branch_in_execute : IN STD_LOGIC;
             stall : OUT STD_LOGIC
         );
     END COMPONENT;
 
     COMPONENT myBranchingController IS
         PORT (
+            clk : IN STD_LOGIC;
             a_branch_instruction_is_in_decode : IN STD_LOGIC; -- 1 if a branch instruction is in decode stage, 0 otherwise
             a_branch_instruction_is_in_execute : IN STD_LOGIC; -- 1 if a branch instruction is in execute stage, 0 otherwise
-            decode_branch_unconditional : IN STD_LOGIC; -- 1 if the instruction in decode stage is a conditional branch, 0 otherwise
-            execute_branch_unconditional : IN STD_LOGIC; -- 1 if the instruction in execute stage is a conditional branch, 0 otherwise
+            decode_branch_conditional : IN STD_LOGIC; -- 1 if the instruction in decode stage is a conditional branch, 0 otherwise
+            execute_branch_conditional : IN STD_LOGIC; -- 1 if the instruction in execute stage is a conditional branch, 0 otherwise
             branched_in_decode : IN STD_LOGIC; -- 1 if i already have branched in decode stage, 0 otherwise
             can_branch : IN STD_LOGIC; -- 1 if the branch can be taken in decode stage, 0 otherwise
             zero_flag : IN STD_LOGIC; -- 1 if the zero flag is set after execute stage, 0 otherwise
+            any_stall : IN STD_LOGIC; -- 1 if there is a stall in the pipeline, 0 otherwise
             prediction_out : OUT STD_LOGIC; -- 1 bit prediction of the branch instruction in decode stage, can be 0 or 1 and it toggles
             two_bit_PC_selector : OUT STD_LOGIC_VECTOR(1 DOWNTO 0); -- 2 bit selector for the PC, 00 for decode branch update, 01 for execute branch update, 10 for register address, 11 for normal PC update +2
             will_branch_in_decode : OUT STD_LOGIC; -- 1 if the branch will be taken in decode stage, 0 otherwise
             branch_out : OUT STD_LOGIC
+
         );
     END COMPONENT;
 
-    COMPONENT InterruptLatch IS
+    -- COMPONENT InterruptLatch IS
+    --     PORT (
+    --         CLK : IN STD_LOGIC;
+    --         Reset : IN STD_LOGIC;
+    --         Interrupt : IN STD_LOGIC;
+    --         Stall : IN STD_LOGIC;
+    --         From_ret_rti_counter : IN STD_LOGIC;
+    --         Immediate_bit_from_fetch : IN STD_LOGIC;
+    --         Branch : IN STD_LOGIC;
+    --         -- Branched_from_decode : IN STD_LOGIC;
+    --         -- Reset_previous_latch : OUT STD_LOGIC;
+    --         Latched_interrupt : OUT STD_LOGIC
+    --     );
+    -- END COMPONENT;
+
+    COMPONENT branchingRegister IS
         PORT (
-            CLK : IN STD_LOGIC;
-            Reset : IN STD_LOGIC;
-            Interrupt : IN STD_LOGIC;
-            Stall : IN STD_LOGIC;
-            From_ret_rti_counter : IN STD_LOGIC;
-            Immediate_bit_from_fetch : IN STD_LOGIC;
-            Branch : IN STD_LOGIC;
-            -- Branched_from_decode : IN STD_LOGIC;
-            -- Reset_previous_latch : OUT STD_LOGIC;
-            Latched_interrupt : OUT STD_LOGIC
+            clk : IN STD_LOGIC;
+            taken_address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+            not_taken_address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+            prediction_bit : IN STD_LOGIC;
+            address_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
+        );
+    END COMPONENT;
+
+    COMPONENT Interrupt IS
+        PORT (
+            clk : IN STD_LOGIC;
+            reset : IN STD_LOGIC;
+            int : IN STD_LOGIC;
+            retRtiCounter : IN STD_LOGIC;
+            branch : IN STD_LOGIC;
+            decodeConditionalBranch : IN STD_LOGIC;
+            intFSM : IN STD_LOGIC;
+            immediate : IN STD_LOGIC;
+            latchedInterrupt : OUT STD_LOGIC
         );
     END COMPONENT;
 
@@ -182,6 +213,8 @@ ARCHITECTURE Integration_arch OF Integration IS
     -- SIGNAL DE_D, DE_Q : STD_LOGIC_VECTOR(159 DOWNTO 0);
     -- SIGNAL EM_D, EM_Q : STD_LOGIC_VECTOR(151 DOWNTO 0);
     -- SIGNAL MW_D, MW_Q : STD_LOGIC_VECTOR(108 DOWNTO 0);
+
+    SIGNAL Fetch_Int : STD_LOGIC := '0';
 
     SIGNAL Fetch_Instruction : STD_LOGIC_VECTOR(15 DOWNTO 0);
     SIGNAL Fetch_PC : STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -197,8 +230,8 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL Decode_Controls : STD_LOGIC_VECTOR(14 DOWNTO 0);
 
     SIGNAL Decode_Execute_Reset : STD_LOGIC;
-    SIGNAL Decode_Execute_In : STD_LOGIC_VECTOR(160 DOWNTO 0);
-    SIGNAL Decode_Execute_Out : STD_LOGIC_VECTOR(160 DOWNTO 0);
+    SIGNAL Decode_Execute_In : STD_LOGIC_VECTOR(162 DOWNTO 0);
+    SIGNAL Decode_Execute_Out : STD_LOGIC_VECTOR(162 DOWNTO 0);
 
     SIGNAL Execute_Controls : STD_LOGIC_VECTOR(2 DOWNTO 0);
 
@@ -206,7 +239,6 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL Execute_RS2_Data : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL Execute_Alu_Result : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL Execute_Flags : STD_LOGIC_VECTOR(3 DOWNTO 0);
-    SIGNAL Execute_Output_Port : STD_LOGIC_VECTOR(31 DOWNTO 0);
 
     SIGNAL Execute_Memory_In : STD_LOGIC_VECTOR(148 DOWNTO 0);
     SIGNAL Execute_Memory_Out : STD_LOGIC_VECTOR(148 DOWNTO 0);
@@ -227,44 +259,67 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL IntrerruptFSM_FlagsOrPC : STD_LOGIC;
 
     SIGNAL RetRtiCounterStall : STD_LOGIC := '0';
+    SIGNAL BranchInExecute : STD_LOGIC := '0';
 
     SIGNAL PC_Enable : STD_LOGIC := '1';
     SIGNAL Fetch_Decode_Enable : STD_LOGIC := '1';
     SIGNAL Decode_Execute_Enable : STD_LOGIC := '1';
+
+    SIGNAL ValidRS1 : STD_LOGIC;
+    SIGNAL ValidRS2 : STD_LOGIC;
 
     SIGNAL BranchedInDecode : STD_LOGIC;
     SIGNAL PredictionOut : STD_LOGIC;
     SIGNAL TwoBitPCSelector : STD_LOGIC_VECTOR(1 DOWNTO 0);
     SIGNAL BranchOut : STD_LOGIC;
 
+    SIGNAL CorrectionAddress : STD_LOGIC_VECTOR(31 DOWNTO 0);
+
     SIGNAL LatchedInterrupt : STD_LOGIC := '0';
+    SIGNAL InterruptLatchBranch : STD_LOGIC := '0';
 
 BEGIN
     PC_Enable <= NOT (IntrerruptFSM_Stall);
+    Fetch_Int <= int OR LatchedInterrupt;
 
     -- Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, x"00000000", BranchOut, Fetch_Instruction, Fetch_PC, PC_To_Store);
-    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, LatchedInterrupt, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, x"00000000", BranchOut, Fetch_Instruction, Fetch_PC, PC_To_Store);
+    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, Fetch_Int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, CorrectionAddress, BranchOut, Fetch_Decode_Out(15), RetRtiCounterStall, Fetch_Instruction, Fetch_PC, PC_To_Store);
 
-    RetRtiCounter1 : RetRtiCounter PORT MAP(clk, rst, Decode_Controls(1), '1', RetRtiCounterStall);
+    BranchInExecute <= BranchOut AND Decode_Execute_Out(117);
+    RetRtiCounter1 : RetRtiCounter PORT MAP(clk, rst, Decode_Controls(1), '1', BranchInExecute, RetRtiCounterStall);
 
-    InterruptLatch1 : InterruptLatch PORT MAP(
+    -- InterruptLatch1 : InterruptLatch PORT MAP(
+    --     clk => clk,
+    --     Reset => rst,
+    --     Interrupt => int,
+    --     Stall => IntrerruptFSM_Stall,
+    --     From_ret_rti_counter => RetRtiCounterStall,
+    --     Immediate_bit_from_fetch => Fetch_Decode_Out(15),
+    --     Branch => BranchOut,
+    --     -- Branched_from_decode => BranchedInDecode,
+    --     -- Reset_previous_latch => open,
+    --     Latched_interrupt => LatchedInterrupt
+    -- );
+
+    InterruptLatchBranch <= BranchOut AND Decode_Execute_Out(117) AND (NOT Decode_Controls(6));
+
+    Interrupt1 : Interrupt PORT MAP(
         clk => clk,
-        Reset => rst,
-        Interrupt => int,
-        Stall => IntrerruptFSM_Stall,
-        From_ret_rti_counter => RetRtiCounterStall,
-        Immediate_bit_from_fetch => Fetch_Decode_Out(15),
-        Branch => BranchOut,
-        -- Branched_from_decode => BranchedInDecode,
-        -- Reset_previous_latch => open,
-        Latched_interrupt => LatchedInterrupt
+        reset => rst,
+        int => int,
+        retRtiCounter => RetRtiCounterStall,
+        branch => InterruptLatchBranch,
+        decodeConditionalBranch => Decode_Controls(5),
+        intFSM => IntrerruptFSM_Stall,
+        immediate => Fetch_Decode_Out(15),
+        latchedInterrupt => LatchedInterrupt
     );
 
     -- FD_D <= INT & PC_Address & Instruction;
 
     -- Fetch_Decode_In <= rst & Int & PC_To_Store & Fetch_Instruction;
-    Fetch_Decode_In <= rst & LatchedInterrupt & PC_To_Store & Fetch_Instruction;
-    Fetch_Decode_Reset <= Fetch_Decode_Out(49) OR Fetch_Decode_Out(15) OR RetRtiCounterStall OR BranchOut;
+    Fetch_Decode_In <= rst & Fetch_Int & PC_To_Store & Fetch_Instruction;
+    Fetch_Decode_Reset <= Fetch_Decode_Out(49) OR (Fetch_Decode_Out(48) AND (NOT LatchedInterrupt)) OR Fetch_Decode_Out(15) OR RetRtiCounterStall OR (BranchOut AND (NOT Fetch_Int));
     Fetch_Decode_Enable <= NOT (IntrerruptFSM_Stall);
 
     FETCH_DECODE : MyRegister GENERIC MAP(50) PORT MAP(CLK, Fetch_Decode_Reset, Fetch_Decode_Enable, Fetch_Decode_In, Fetch_Decode_Out);
@@ -274,17 +329,19 @@ BEGIN
     -- bits 47 to 16 -> PC
     -- bit 48 -> Interrupt
     -- bits 49 -> Rst
-    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(105), Memory_WB_Out(104), Memory_WB_Out(69 DOWNTO 67), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Fetch_Decode_Out(49), Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls);
+    Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(105), Memory_WB_Out(104), Memory_WB_Out(69 DOWNTO 67), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Fetch_Decode_Out(49), Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls, ValidRS1, ValidRS2);
 
-    BranchingController1 : myBranchingController PORT MAP(Decode_Controls(6), Decode_Execute_Out(117), Decode_Controls(5), Decode_Execute_Out(116), Decode_Execute_Out(160), '1', Execute_Flags(0), PredictionOut, TwoBitPCSelector, BranchedInDecode, BranchOut);
+    BranchingController1 : myBranchingController PORT MAP(clk, Decode_Controls(6), Decode_Execute_Out(117), Decode_Controls(5), Decode_Execute_Out(116), Decode_Execute_Out(160), '1', Execute_Flags(0), '0', PredictionOut, TwoBitPCSelector, BranchedInDecode, BranchOut);
+
+    BranchingRegister1 : branchingRegister PORT MAP(clk, Decode_RS1_Data, Fetch_Decode_Out(47 DOWNTO 16), PredictionOut, CorrectionAddress);
 
     -- DE_D <= RS1_DATA & RS2_DATA & RS1 & RS2 & RDEST & Immediate_value & OPCODE & CONTROLS & INT & PC & IMM;
 
-    Decode_Execute_In <= BranchedInDecode & Fetch_Decode_Out(15) & Fetch_Decode_Out(47 DOWNTO 16) & Fetch_Decode_Out(48) & Decode_Controls & Fetch_Decode_Out(14 DOWNTO 9) & Decode_Immediate_Value & Fetch_Decode_Out(2 DOWNTO 0) & Fetch_Decode_Out(5 DOWNTO 3) & Fetch_Decode_Out(8 DOWNTO 6) & Decode_RS2_Data & Decode_RS1_Data;
+    Decode_Execute_In <= ValidRS2 & ValidRS1 & BranchedInDecode & Fetch_Decode_Out(15) & Fetch_Decode_Out(47 DOWNTO 16) & Fetch_Decode_Out(48) & Decode_Controls & Fetch_Decode_Out(14 DOWNTO 9) & Decode_Immediate_Value & Fetch_Decode_Out(2 DOWNTO 0) & Fetch_Decode_Out(5 DOWNTO 3) & Fetch_Decode_Out(8 DOWNTO 6) & Decode_RS2_Data & Decode_RS1_Data;
     Decode_Execute_Reset <= RST OR (BranchOut AND Decode_Execute_Out(117));
     Decode_Execute_Enable <= NOT (IntrerruptFSM_Stall);
 
-    DECODE_EXECUTE : MyRegister GENERIC MAP(161) PORT MAP(CLK, Decode_Execute_Reset, Decode_Execute_Enable, Decode_Execute_In, Decode_Execute_Out);
+    DECODE_EXECUTE : MyRegister GENERIC MAP(163) PORT MAP(CLK, Decode_Execute_Reset, Decode_Execute_Enable, Decode_Execute_In, Decode_Execute_Out);
 
     -- The concatenation of the bits is as follows:
     -- RS1 Data 31-0
@@ -299,10 +356,12 @@ BEGIN
     -- PC 158-127
     -- Imm 159
     -- Branched in decode 160
+    -- Valid RS1 161
+    -- Valid RS2 162
 
     Execute_Controls <= Decode_Execute_Out(125) & Decode_Execute_Out(115 DOWNTO 114);
 
-    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls, Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(31 DOWNTO 0), Memory_WB_Out(63 DOWNTO 32), Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(102), Memory_WB_Out(73 DOWNTO 70), Decode_Execute_Out(159), Execute_RS1_Data, Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Execute_Output_Port);
+    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls, Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(31 DOWNTO 0), Memory_WB_Out(63 DOWNTO 32), Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(102), Memory_WB_Out(73 DOWNTO 70), Decode_Execute_Out(159), Execute_RS1_Data, Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Output_Port);
 
     -- EM_D <= RS2_DATA & ALU_RESULT & FLAGS & RS1 & RS2 & RDEST & CONTROLS & PC & INT & SP;
 

@@ -5,16 +5,18 @@ ENTITY CONTROLLER IS
     PORT(
             OPCODE: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             FUNCTION_BITS: IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+            IMMEDIATE: IN STD_LOGIC;
             RESET : IN STD_LOGIC;
             INT : IN STD_LOGIC;
             
-            CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(14 DOWNTO 0)
+            CONTROL_SIGNALS: OUT STD_LOGIC_VECTOR(14 DOWNTO 0);
+            ValidRS1, ValidRS2: OUT STD_LOGIC
         );
 END ENTITY;
 
 ARCHITECTURE CONTROLLER_ARCH OF CONTROLLER IS
-    SIGNAL  ALU_OPERATION, MEM_READ, MEM_WRITE, SELECT_PC, PROTECT, FREE, REG_WRITE, REG_WRITE_2, MEM_TO_REG, BRANCH, UNCONDITIONAL_BRANCH, 
-            IN_ENABLE, OUT_ENABLE, ADDRESS_SELECTOR, RET_OR_RTI, RTI, IMM: STD_LOGIC;
+    SIGNAL  ALU_OPERATION, MEM_READ, MEM_WRITE, SELECT_PC, PROTECT, FREE, REG_WRITE, REG_WRITE_2, MEM_TO_REG, BRANCH, CONDITIONAL_BRANCH, 
+            IN_ENABLE, OUT_ENABLE, ADDRESS_SELECTOR, RET_OR_RTI, RTI: STD_LOGIC;
 BEGIN
     ALU_OPERATION           <= '1'  WHEN (OPCODE = "001" OR OPCODE = "010")
                                     ELSE '0';
@@ -42,7 +44,7 @@ BEGIN
    
     BRANCH                  <= '1'  WHEN (OPCODE(2 DOWNTO 1) = "11" AND FUNCTION_BITS(2) = '0')
                                     ELSE '0';
-    UNCONDITIONAL_BRANCH    <= '1'  WHEN ((OPCODE = "110" AND FUNCTION_BITS(2) = '0') OR (OPCODE = "111" AND FUNCTION_BITS(0) = '1')) 
+    CONDITIONAL_BRANCH    <= '1'  WHEN (OPCODE = "111" AND FUNCTION_BITS(0) = '0')
                                     ELSE '0';  
    
     IN_ENABLE               <= '1'  WHEN (OPCODE = "011" AND FUNCTION_BITS(0) = '1') 
@@ -57,9 +59,17 @@ BEGIN
                                     ELSE '0';
     RTI                     <= '1' WHEN (OPCODE = "110" AND FUNCTION_BITS(0) = '1')
                                     ELSE '0';
+
+    ValidRS1                <=  '0' WHEN (OPCODE = "000" OR (OPCODE = "011" AND FUNCTION_BITS(0) = '1') OR (OPCODE = "100" AND FUNCTION_BITS(2) = '1') 
+                                    OR (OPCODE = "110" AND FUNCTION_BITS(2) = '1') OR (OPCODE = "001" AND FUNCTION_BITS = "111") OR INT = '1' OR RESET = '1') 
+                                    ELSE '1';
+
+    ValidRS2                <=  '0' WHEN (INT = '1' OR RESET = '1')
+                                    ELSE '1' WHEN ((OPCODE = "100" AND FUNCTION_BITS(1) = '1') OR (OPCODE = "001" AND IMMEDIATE = '0'))
+                                    ELSE '0';
    
     CONTROL_SIGNALS <=  "001100000000100" WHEN INT = '1' ELSE   
-                        ALU_OPERATION & MEM_READ & MEM_WRITE & SELECT_PC & PROTECT & FREE & REG_WRITE & REG_WRITE_2 & BRANCH & UNCONDITIONAL_BRANCH 
+                        ALU_OPERATION & MEM_READ & MEM_WRITE & SELECT_PC & PROTECT & FREE & REG_WRITE & REG_WRITE_2 & BRANCH & CONDITIONAL_BRANCH 
                         & IN_ENABLE & OUT_ENABLE & ADDRESS_SELECTOR & RET_OR_RTI & RTI 
                         WHEN RESET = '0' 
                         ELSE (OTHERS => '0'); 

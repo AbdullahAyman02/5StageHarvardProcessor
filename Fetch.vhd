@@ -14,6 +14,8 @@ ENTITY Fetch IS
         execute_address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
         correction_address : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
         branch : IN STD_LOGIC;
+        immediate : IN STD_LOGIC;
+        ret_rti_stall : IN STD_LOGIC;
 
         Instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
         PC_Address_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -32,6 +34,8 @@ ARCHITECTURE Fetch_Arch OF Fetch IS
             int_m : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
             ret_rti : IN STD_LOGIC;
             ret_rti_m : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+            immediate : IN STD_LOGIC;
+            ret_rti_stall : IN STD_LOGIC;
             inst_address : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
         );
     END COMPONENT;
@@ -42,6 +46,8 @@ ARCHITECTURE Fetch_Arch OF Fetch IS
             clk : IN STD_LOGIC;
             rst : IN STD_LOGIC;
             int : IN STD_LOGIC;
+            immediate : IN STD_LOGIC;
+            ret_rti_stall : IN STD_LOGIC;
             rst_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             int_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
@@ -80,8 +86,8 @@ BEGIN
     which_pc_selector <= int & branch;
 
     -- Components
-    PC1 : PC GENERIC MAP(32) PORT MAP(rst, enable, clk, pc_address, rst_address, int, int_address, ret_rti, ret_rti_m, inst_address);
-    InstructionCache1 : InstructionCache PORT MAP(inst_address, clk, rst, int, rst_address, int_address, inst);
+    PC1 : PC GENERIC MAP(32) PORT MAP(rst, enable, clk, pc_address, rst_address, int, int_address, ret_rti, ret_rti_m, immediate, ret_rti_stall, inst_address);
+    InstructionCache1 : InstructionCache PORT MAP(inst_address, clk, rst, int, immediate, ret_rti_stall, rst_address, int_address, inst);
     Adder : my_nadder GENERIC MAP(32) PORT MAP(inst_address, x"00000001", '0', pc_update, OPEN, OPEN);
     NextAddressMux : Mux4 GENERIC MAP(32) PORT MAP(address_selector, decode_address, execute_address, correction_address, pc_update, pc_address);
     WhichPCToStore : Mux4 GENERIC MAP(32) PORT MAP(which_pc_selector, pc_update, pc_update, inst_address, pc_address, pc_to_store);
