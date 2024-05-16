@@ -8,7 +8,7 @@ ENTITY RetRtiCounter IS
         rst : IN STD_LOGIC;
         ret_rti : IN STD_LOGIC;
         enable : IN STD_LOGIC;
-        stall : OUT STD_LOGIC;
+        stall : OUT STD_LOGIC
     );
 END RetRtiCounter;
 
@@ -19,7 +19,7 @@ BEGIN
     PROCESS (clk, ret_rti)
     BEGIN
         IF (rising_edge(clk) AND to_integer(unsigned(temp)) > 0) THEN
-            IF enable = '0' THEN
+            IF enable = '1' THEN
                 temp <= STD_LOGIC_VECTOR(unsigned(temp) - 1);
             END IF;
         END IF;

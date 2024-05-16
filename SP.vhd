@@ -29,7 +29,7 @@ BEGIN
             push_address <= (11 DOWNTO 0 => '1', OTHERS => '0');
         ELSIF falling_edge(clk) THEN
             IF addressSelector = '1' AND loadUse = '0' THEN
-                IF func(2) = '1' AND func(1) = '0' AND int = '0' THEN
+                IF func(2) = '1' AND func(1) = '0' AND int /= '1' THEN
                     -- pop_address <= STD_LOGIC_VECTOR(unsigned(nextStackPointer) + 1);
                     -- nextStackPointer <= STD_LOGIC_VECTOR(unsigned(nextStackPointer) + 1);
                     stackPointer <= pop_address;
