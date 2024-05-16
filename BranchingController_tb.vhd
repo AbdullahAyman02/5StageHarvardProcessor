@@ -11,8 +11,8 @@ ARCHITECTURE behavior OF branching_controller_tb IS
          clk : IN STD_LOGIC;
          a_branch_instruction_is_in_decode : IN STD_LOGIC;
          a_branch_instruction_is_in_execute : IN STD_LOGIC;
-         decode_branch_unconditional : IN STD_LOGIC;
-         execute_branch_unconditional : IN STD_LOGIC;
+         decode_branch_conditional : IN STD_LOGIC;
+         execute_branch_conditional : IN STD_LOGIC;
          branched_in_decode : IN STD_LOGIC;
          can_branch : IN STD_LOGIC;
          zero_flag : IN STD_LOGIC;
@@ -21,7 +21,6 @@ ARCHITECTURE behavior OF branching_controller_tb IS
          prediction_out : OUT STD_LOGIC;
          two_bit_PC_selector : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
          will_branch_in_decode : OUT STD_LOGIC;
-         will_branch_in_execute : OUT STD_LOGIC;
          branch_out : OUT STD_LOGIC
       );
    END COMPONENT;
@@ -29,8 +28,8 @@ ARCHITECTURE behavior OF branching_controller_tb IS
    --Inputs
    SIGNAL a_branch_instruction_is_in_decode : STD_LOGIC := '0';
    SIGNAL a_branch_instruction_is_in_execute : STD_LOGIC := '0';
-   SIGNAL decode_branch_unconditional : STD_LOGIC := '0';
-   SIGNAL execute_branch_unconditional : STD_LOGIC := '0';
+   SIGNAL decode_branch_conditional : STD_LOGIC := '0';
+   SIGNAL execute_branch_conditional : STD_LOGIC := '0';
    SIGNAL branched_in_decode : STD_LOGIC := '0';
    SIGNAL can_branch : STD_LOGIC := '0';
    SIGNAL zero_flag : STD_LOGIC := '0';
@@ -41,7 +40,6 @@ ARCHITECTURE behavior OF branching_controller_tb IS
    SIGNAL prediction_out : STD_LOGIC;
    SIGNAL two_bit_PC_selector : STD_LOGIC_VECTOR(1 DOWNTO 0);
    SIGNAL will_branch_in_decode : STD_LOGIC;
-   SIGNAL will_branch_in_execute : STD_LOGIC;
    SIGNAL branch_out : STD_LOGIC;
    SIGNAL clk_period : TIME := 100 ns;
 
@@ -51,15 +49,14 @@ BEGIN
       clk => clk,
       a_branch_instruction_is_in_decode => a_branch_instruction_is_in_decode,
       a_branch_instruction_is_in_execute => a_branch_instruction_is_in_execute,
-      decode_branch_unconditional => decode_branch_unconditional,
-      execute_branch_unconditional => execute_branch_unconditional,
+      decode_branch_conditional => decode_branch_conditional,
+      execute_branch_conditional => execute_branch_conditional,
       branched_in_decode => branched_in_decode,
       can_branch => can_branch,
       zero_flag => zero_flag,
       prediction_out => prediction_out,
       two_bit_PC_selector => two_bit_PC_selector,
       will_branch_in_decode => will_branch_in_decode,
-      will_branch_in_execute => will_branch_in_execute,
       any_stall => any_stall,
       branch_out => branch_out
    );
@@ -77,7 +74,6 @@ BEGIN
       WAIT FOR clk_period;
 
 
-
       -- Test Case - 1 ************************************************************************************************
 
       -- This is the case where i am in decode and predicting not taken while there is no data hazard with a conditional branch
@@ -85,7 +81,7 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '0';
-      decode_branch_unconditional <= '0';
+      decode_branch_conditional <= '1';
       any_stall <= '0';
       can_branch <= '1';
 
@@ -99,20 +95,16 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_execute <= '1';
       a_branch_instruction_is_in_decode <= '0';
-      execute_branch_unconditional <= '0';
+      execute_branch_conditional <= '1';
       any_stall <= '0';
       zero_flag <= '0';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '0' REPORT "Test case 1 exec, will_branch_in_execute is not '0'" SEVERITY error;
       ASSERT two_bit_PC_selector = "11" REPORT "Test case 1 exec, two_bit_PC_selector_signal is not '11'" SEVERITY error;
       ASSERT prediction_out = '0' REPORT "Test case 1 exec, prediction_out is not '0'" SEVERITY error;
 
       --******************************************************************************************************************
-
-
-
 
 
 
@@ -123,7 +115,7 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '0';
-      decode_branch_unconditional <= '0';
+      decode_branch_conditional <= '1';
       any_stall <= '0';
       can_branch <= '1';
 
@@ -137,18 +129,16 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_execute <= '1';
       a_branch_instruction_is_in_decode <= '0';
-      execute_branch_unconditional <= '0';
+      execute_branch_conditional <= '1';
       any_stall <= '0';
       zero_flag <= '1';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '1' REPORT "Test case 2 exec, will_branch_in_execute is not '1'" SEVERITY error;
       ASSERT two_bit_PC_selector = "10" REPORT "Test case 2 exec, two_bit_PC_selector_signal is not '10'" SEVERITY error;
       ASSERT prediction_out = '1' REPORT "Test case 2 exec, prediction_out is not '1'" SEVERITY error;
 
       --*******************************************************************************************************************
-
 
 
 
@@ -160,7 +150,7 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '0';
-      decode_branch_unconditional <= '0';
+      decode_branch_conditional <= '1';
       any_stall <= '0';
       can_branch <= '1';
 
@@ -174,17 +164,84 @@ BEGIN
       branched_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '1';
       a_branch_instruction_is_in_decode <= '0';
-      execute_branch_unconditional <= '0';
+      execute_branch_conditional <= '1';
       any_stall <= '0';
       zero_flag <= '1';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '0' REPORT "Test case 3 exec, will_branch_in_execute is not '0'" SEVERITY error;
       ASSERT two_bit_PC_selector = "11" REPORT "Test case 3 exec, two_bit_PC_selector_signal is not '11'" SEVERITY error;
       ASSERT prediction_out = '1' REPORT "Test case 3 exec, prediction_out is not '1'" SEVERITY error;
 
       --*******************************************************************************************************************
+
+
+
+      --*******************************************************************************************************************
+      -- Test Case - 9 ****************************************************************************************************
+
+      -- This is the case where there is a conditional branch in decode and prediction bit is taken, but there is a data hazard
+      --prediction bit here is 1
+      branched_in_decode <= '0';
+      a_branch_instruction_is_in_decode <= '1';
+      a_branch_instruction_is_in_execute <= '0';
+      decode_branch_conditional <= '1';
+      any_stall <= '0';
+      can_branch <= '0';
+
+      WAIT FOR clk_period;
+
+      ASSERT will_branch_in_decode = '0' REPORT "Test case 9 decode, will_branch_in_decode is not '0'" SEVERITY error;
+      ASSERT two_bit_PC_selector = "11" REPORT "Test case 9 decode, two_bit_PC_selector_signal is not '11'" SEVERITY error;
+      ASSERT prediction_out = '1' REPORT "Test case 9 decode, prediction_out is not '1'" SEVERITY error;
+
+      branched_in_decode <= '0';
+      a_branch_instruction_is_in_execute <= '1';
+      a_branch_instruction_is_in_decode <= '0';
+      execute_branch_conditional <= '1';
+      any_stall <= '0';
+      zero_flag <= '0';
+
+      WAIT FOR clk_period;
+
+      ASSERT two_bit_PC_selector = "11" REPORT "Test case 9 exec, two_bit_PC_selector_signal is not '11'" SEVERITY error;
+      ASSERT prediction_out = '1' REPORT "Test case 9 exec, prediction_out is not '1'" SEVERITY error;
+      --******************************************************************************************************************
+
+
+
+
+      --*******************************************************************************************************************
+      -- Test Case - 10 ****************************************************************************************************
+
+      -- This is the case where there is a conditional branch in decode and prediction bit is taken, but there is a data hazard
+      --prediction bit here is 1
+      branched_in_decode <= '0';
+      a_branch_instruction_is_in_decode <= '1';
+      a_branch_instruction_is_in_execute <= '0';
+      decode_branch_conditional <= '1';
+      any_stall <= '0';
+      can_branch <= '0';
+
+      WAIT FOR clk_period;
+
+      ASSERT will_branch_in_decode = '0' REPORT "Test case 10 decode, will_branch_in_decode is not '0'" SEVERITY error;
+      ASSERT two_bit_PC_selector = "11" REPORT "Test case 10 decode, two_bit_PC_selector_signal is not '11'" SEVERITY error;
+      ASSERT prediction_out = '1' REPORT "Test case 10 decode, prediction_out is not '1'" SEVERITY error;
+
+      branched_in_decode <= '0';
+      a_branch_instruction_is_in_execute <= '1';
+      a_branch_instruction_is_in_decode <= '0';
+      execute_branch_conditional <= '1';
+      any_stall <= '0';
+      zero_flag <= '1';
+
+      WAIT FOR clk_period;
+
+
+      ASSERT two_bit_PC_selector = "01" REPORT "Test case 10 exec, two_bit_PC_selector_signal is not '10'" SEVERITY error;
+      ASSERT prediction_out = '1' REPORT "Test case 10 exec, prediction_out is not '1'" SEVERITY error;
+      --******************************************************************************************************************
 
 
 
@@ -197,7 +254,7 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '0';
-      decode_branch_unconditional <= '0';
+      decode_branch_conditional <= '1';
       any_stall <= '0';
       can_branch <= '1';
 
@@ -211,18 +268,16 @@ BEGIN
       branched_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '1';
       a_branch_instruction_is_in_decode <= '0';
-      execute_branch_unconditional <= '0';
+      execute_branch_conditional <= '1';
       any_stall <= '0';
       zero_flag <= '0';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '1' REPORT "Test case 4 exec, will_branch_in_execute is not '1'" SEVERITY error;
       ASSERT two_bit_PC_selector = "10" REPORT "Test case 4 exec, two_bit_PC_selector_signal is not '10'" SEVERITY error;
       ASSERT prediction_out = '0' REPORT "Test case 4 exec, prediction_out is not '0'" SEVERITY error;
 
       --*******************************************************************************************************************
-
 
 
 
@@ -237,18 +292,17 @@ BEGIN
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '1';
       zero_flag <= '0';
-      decode_branch_unconditional <= '0';
-      execute_branch_unconditional <= '0';
+      decode_branch_conditional <= '1';
+      execute_branch_conditional <= '1';
       any_stall <= '0';
       can_branch <= '1';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '0' REPORT "Test case 5 decode, will_branch_in_decode is not '0'" SEVERITY error;
       ASSERT will_branch_in_decode = '0' REPORT "Test case 5 decode, will_branch_in_decode is not '0'" SEVERITY error;
       ASSERT two_bit_PC_selector = "11" REPORT "Test case 5 decode, two_bit_PC_selector_signal is not '11'" SEVERITY error;
       ASSERT prediction_out = '0' REPORT "Test case 5 decode, prediction_out is not '0'" SEVERITY error;
-   
+
       --*******************************************************************************************************************
 
 
@@ -264,18 +318,18 @@ BEGIN
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '1';
       zero_flag <= '0';
-      decode_branch_unconditional <= '1';
-      execute_branch_unconditional <= '0';
+      decode_branch_conditional <= '0';
+      execute_branch_conditional <= '1';
       any_stall <= '0';
       can_branch <= '1';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '0' REPORT "Test case 6 decode, will_branch_in_decode is not '0'" SEVERITY error;
+
       ASSERT will_branch_in_decode = '1' REPORT "Test case 6 decode, will_branch_in_decode is not '1'" SEVERITY error;
       ASSERT two_bit_PC_selector = "00" REPORT "Test case 6 decode, two_bit_PC_selector_signal is not '00'" SEVERITY error;
       ASSERT prediction_out = '0' REPORT "Test case 6 decode, prediction_out is not '0'" SEVERITY error;
-   
+
       --*******************************************************************************************************************
 
 
@@ -289,18 +343,18 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '0';
-      decode_branch_unconditional <= '1';
+      decode_branch_conditional <= '0';
       any_stall <= '0';
       can_branch <= '1';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '0' REPORT "Test case 7 decode, will_branch_in_decode is not '0'" SEVERITY error;
       ASSERT will_branch_in_decode = '1' REPORT "Test case 7 decode, will_branch_in_decode is not '1'" SEVERITY error;
       ASSERT two_bit_PC_selector = "00" REPORT "Test case 7 decode, two_bit_PC_selector_signal is not '00'" SEVERITY error;
       ASSERT prediction_out = '0' REPORT "Test case 7 decode, prediction_out is not '0'" SEVERITY error;
-   
+
       --*******************************************************************************************************************
+
 
 
 
@@ -312,7 +366,7 @@ BEGIN
       branched_in_decode <= '0';
       a_branch_instruction_is_in_decode <= '1';
       a_branch_instruction_is_in_execute <= '0';
-      decode_branch_unconditional <= '1';
+      decode_branch_conditional <= '0';
       any_stall <= '0';
       can_branch <= '0';
 
@@ -321,23 +375,19 @@ BEGIN
       ASSERT will_branch_in_decode = '0' REPORT "Test case 8 decode, will_branch_in_decode is not '0'" SEVERITY error;
       ASSERT two_bit_PC_selector = "11" REPORT "Test case 8 decode, two_bit_PC_selector_signal is not '11'" SEVERITY error;
       ASSERT prediction_out = '0' REPORT "Test case 8 decode, prediction_out is not '0'" SEVERITY error;
-
-
       branched_in_decode <= '0';
       a_branch_instruction_is_in_decode <= '0';
       a_branch_instruction_is_in_execute <= '1';
-      execute_branch_unconditional <= '1';
+      execute_branch_conditional <= '0';
       any_stall <= '0';
 
       WAIT FOR clk_period;
 
-      ASSERT will_branch_in_execute = '1' REPORT "Test case 8 decode, will_branch_in_decode is not '1'" SEVERITY error;
       ASSERT two_bit_PC_selector = "01" REPORT "Test case 8 decode, two_bit_PC_selector_signal is not '01'" SEVERITY error;
       ASSERT prediction_out = '0' REPORT "Test case 8 decode, prediction_out is not '0'" SEVERITY error;
-   
-      --*******************************************************************************************************************
 
-   WAIT;
+      --*******************************************************************************************************************
+      WAIT;
    END PROCESS;
 
 END;

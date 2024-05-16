@@ -16,7 +16,6 @@ ENTITY myBranchingController IS
         two_bit_PC_selector : OUT STD_LOGIC_VECTOR(1 DOWNTO 0); -- 2 bit selector for the PC, 00 for decode branch update, 01 for execute branch update, 10 for register address, 11 for normal PC update +2
         will_branch_in_decode : OUT STD_LOGIC; -- 1 if the branch will be taken in decode stage, 0 otherwise
         branch_out : OUT STD_LOGIC
-
     );
 END myBranchingController;
 
