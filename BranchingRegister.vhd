@@ -21,7 +21,7 @@ BEGIN
             if prediction_bit = '1' then
                 address_out <= not_taken_address;
             else
-                address_out <= taken_address ;
+                address_out <= taken_address;
             end if;
         end if;
       

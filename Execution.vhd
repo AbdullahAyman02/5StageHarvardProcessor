@@ -24,7 +24,8 @@ Entity Execution is
         RS2_data_out : out std_logic_vector(31 downto 0);
         ALU_result : out std_logic_vector(31 downto 0);
         Flags: out std_logic_vector(3 downto 0);
-        Output_port : out std_logic_vector(31 downto 0)
+        Output_port : out std_logic_vector(31 downto 0);
+        zero_flag : out std_logic
     );
 End Execution;
 
@@ -87,6 +88,7 @@ RS1_data_out <= operand1_out;
 RS2_data_out <= store_swap_out;
 ALU_result <= alu_or_input;
 Flags <= alu_flags;
+zero_flag <= flag_register_flags(0);
 Output_port <= operand1_out when Controls(0) = '1';
 
 End execution_arch;

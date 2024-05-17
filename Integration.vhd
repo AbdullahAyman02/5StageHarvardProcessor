@@ -84,7 +84,8 @@ ARCHITECTURE Integration_arch OF Integration IS
             RS2_data_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
             ALU_result : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
             Flags : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-            Output_port : OUT STD_LOGIC_VECTOR(31 DOWNTO 0)
+            Output_port : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+            zero_flag : out std_logic
         );
     END COMPONENT;
     COMPONENT Memory IS
@@ -369,6 +370,8 @@ ARCHITECTURE Integration_arch OF Integration IS
 
     SIGNAL Exception_Out_Signal : STD_LOGIC;
 
+    SIGNAL zeroFlag : STD_LOGIC;
+
 BEGIN
     PC_Enable <= NOT (IntrerruptFSM_Stall OR loadUse);
     Fetch_Int <= int OR LatchedInterrupt;
@@ -422,7 +425,7 @@ BEGIN
     -- bits 49 -> Rst
     Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(105), Memory_WB_Out(104), Memory_WB_Out(69 DOWNTO 67), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Fetch_Decode_Out(49), Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls, ValidRS1, ValidRS2);
 
-    BranchingController1 : myBranchingController PORT MAP(clk, Decode_Controls(6), Decode_Execute_Out(117), Decode_Controls(5), Decode_Execute_Out(116), Decode_Execute_Out(160), FUCanBranch, Execute_Flags(0), '0', PredictionOut, TwoBitPCSelector, BranchedInDecode, BranchOut);
+    BranchingController1 : myBranchingController PORT MAP(clk, Decode_Controls(6), Decode_Execute_Out(117), Decode_Controls(5), Decode_Execute_Out(116), Decode_Execute_Out(160), FUCanBranch, zeroFlag, '0', PredictionOut, TwoBitPCSelector, BranchedInDecode, BranchOut);
 
     BranchingRegister1 : branchingRegister PORT MAP(clk, Decode_RS1_Data, Fetch_Decode_Out(47 DOWNTO 16), PredictionOut, CorrectionAddress);
 
@@ -497,7 +500,7 @@ BEGIN
         LOAD_USE => loadUse
     );
 
-    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls, Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(31 DOWNTO 0), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(102), Memory_WB_Out(73 DOWNTO 70), Decode_Execute_Out(159), FURsrc1, FURsrc2, FUSwapStore, Decode_Execute_Out(120), Execute_RS1_Data, Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Output_Port);
+    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls, Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(31 DOWNTO 0), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(102), Memory_WB_Out(73 DOWNTO 70), Decode_Execute_Out(159), FURsrc1, FURsrc2, FUSwapStore, Decode_Execute_Out(120), Execute_RS1_Data, Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Output_Port, zeroFlag);
 
     -- EM_D <= RS2_DATA & ALU_RESULT & FLAGS & RS1 & RS2 & RDEST & CONTROLS & PC & INT & SP;
 

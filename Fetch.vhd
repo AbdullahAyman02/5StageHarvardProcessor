@@ -92,9 +92,12 @@ ARCHITECTURE Fetch_Arch OF Fetch IS
     SIGNAL pc_address : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
     SIGNAL which_pc_selector : STD_LOGIC_VECTOR(1 DOWNTO 0) := (1 DOWNTO 0 => '0');
     SIGNAL normal_pc_or_exception_pc : STD_LOGIC_VECTOR(31 DOWNTO 0) := (31 DOWNTO 0 => '0');
+    SIGNAL store_branch : STD_LOGIC := '0';
 
 BEGIN
-    which_pc_selector <= int & branch;
+    store_branch <= '1' WHEN branch = '1' OR ((inst(14 DOWNTO 12) = "110" OR inst(14 DOWNTO 12) = "111") AND inst(11 DOWNTO 9) = "000") 
+                        ELSE '0';
+    which_pc_selector <= int & store_branch;
 
     -- Components
     PC1 : PC GENERIC MAP(32) PORT MAP(rst, enable, clk, normal_pc_or_exception_pc, rst_address, int, int_address, ret_rti, ret_rti_m, immediate, ret_rti_stall, inst_address);

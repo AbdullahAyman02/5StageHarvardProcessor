@@ -68,9 +68,16 @@ begin
         zero_flag <= '1' when x"00000000",
                         '0' when others;
 
+    zero_flag <=    '1' when alu_result = x"00000000" else
+                    '0' when opcode = "111" and func = "000" else
+                    '0';
+
+    flags_out(0) <= zero_flag when no_flag_change = '0' or (opcode = "111" and func = "000")
+                    else flags_in(0);
+
     with no_flag_change select
-        flags_out(1 downto 0) <= flags_in(1 downto 0) when '1',
-                                negative_flag & zero_flag when others;
+        flags_out(1) <= flags_in(1) when '1',
+                                negative_flag when others;
 
     -- carry_overflow_change <= '1' when (not no_flag_change) and (func = "000" or func = "001")
     --                         else '0';
