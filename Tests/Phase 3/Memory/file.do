@@ -47,6 +47,9 @@ add wave -position 16  sim:/integration/Execution1/Mux8_1/output
 add wave -position 17  sim:/integration/Execution1/Mux8_2/output
 add wave -position 18  sim:/integration/Execution1/Mux8_3/output
 add wave -position 46  sim:/integration/Memory1/ProtectionUnit1/memory
+add wave -position 15  sim:/integration/EPC1/EPC_FLAG
+add wave -position 15  sim:/integration/EPC1/EPC_PC
+add wave -position 7  sim:/integration/PC_To_Store
 force -freeze sim:/integration/clk 0 0, 1 {50 ps} -r 100
 force -freeze sim:/integration/rst 1 0
 force -freeze sim:/integration/int 0 0
@@ -61,6 +64,7 @@ run
 force -freeze sim:/integration/Input_Port 'hffffffff 0
 run
 force -freeze sim:/integration/Input_Port 'hfffff320 0
+run
 run
 force -freeze sim:/integration/Input_Port 'h10 0
 run

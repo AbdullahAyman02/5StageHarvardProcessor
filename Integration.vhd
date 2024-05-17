@@ -35,6 +35,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             branch : IN STD_LOGIC;
             immediate : IN STD_LOGIC;
             ret_rti_stall : IN STD_LOGIC;
+            exception : IN STD_LOGIC;
 
             Instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             PC_Address_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -243,6 +244,10 @@ ARCHITECTURE Integration_arch OF Integration IS
             IMMEDIATE_VALUE_NOT_INSTRUCTION : IN STD_LOGIC;
 
             ADDRESS_TO_BRANCH_TO : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+            DECODE_ADDRESS_SRC_2 : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+
+            CURR_DECODE_NEEDS_SRC_1 : IN STD_LOGIC;
+            CURR_DECODE_NEEDS_SRC_2 : IN STD_LOGIC;
 
             -- Outputs
             MUX_1_SELECTOR : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -257,6 +262,7 @@ ARCHITECTURE Integration_arch OF Integration IS
 
     COMPONENT EPC
         PORT (
+            clk : IN STD_LOGIC;
             OVERFLOW_PC : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
             PROTECTED_PC : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
 
@@ -361,16 +367,14 @@ ARCHITECTURE Integration_arch OF Integration IS
     SIGNAL EPC_PC : STD_LOGIC_VECTOR(31 DOWNTO 0);
     SIGNAL EPC_FLAG : STD_LOGIC;
 
-    SIGNAL forwardForMemory : STD_LOGIC_VECTOR(31 DOWNTO 0);
-    
     SIGNAL Exception_Out_Signal : STD_LOGIC;
 
 BEGIN
-    PC_Enable <= NOT (IntrerruptFSM_Stall);
+    PC_Enable <= NOT (IntrerruptFSM_Stall OR loadUse);
     Fetch_Int <= int OR LatchedInterrupt;
 
     -- Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, x"00000000", BranchOut, Fetch_Instruction, Fetch_PC, PC_To_Store);
-    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, Fetch_Int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, CorrectionAddress, BranchOut, Fetch_Decode_Out(15), RetRtiCounterStall, Fetch_Instruction, Fetch_PC, PC_To_Store);
+    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, Fetch_Int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, CorrectionAddress, BranchOut, Fetch_Decode_Out(15), RetRtiCounterStall, Exception_Out_Signal, Fetch_Instruction, Fetch_PC, PC_To_Store);
 
     BranchInExecute <= BranchOut AND Decode_Execute_Out(117);
     RetRtiCounter1 : RetRtiCounter PORT MAP(clk, rst, Decode_Controls(1), '1', BranchInExecute, RetRtiCounterStall);
@@ -407,7 +411,7 @@ BEGIN
     -- Fetch_Decode_In <= rst & Int & PC_To_Store & Fetch_Instruction;
     Fetch_Decode_In <= rst & Fetch_Int & PC_To_Store & Fetch_Instruction;
     Fetch_Decode_Reset <= Fetch_Decode_Out(49) OR (Fetch_Decode_Out(48) AND (NOT LatchedInterrupt)) OR Fetch_Decode_Out (15) OR RetRtiCounterStall OR (BranchOut AND (NOT Fetch_Int)) OR Exception_Out_Signal;
-    Fetch_Decode_Enable <= NOT (IntrerruptFSM_Stall);
+    Fetch_Decode_Enable <= NOT (IntrerruptFSM_Stall OR loadUse);
 
     FETCH_DECODE : MyRegister GENERIC MAP(50) PORT MAP(CLK, Fetch_Decode_Reset, Fetch_Decode_Enable, Fetch_Decode_In, Fetch_Decode_Out);
 
@@ -425,7 +429,7 @@ BEGIN
     -- DE_D <= RS1_DATA & RS2_DATA & RS1 & RS2 & RDEST & Immediate_value & OPCODE & CONTROLS & INT & PC & IMM;
 
     Decode_Execute_In <= ValidRS2 & ValidRS1 & BranchedInDecode & Fetch_Decode_Out(15) & Fetch_Decode_Out(47 DOWNTO 16) & Fetch_Decode_Out(48) & Decode_Controls & Fetch_Decode_Out(14 DOWNTO 9) & Decode_Immediate_Value & Fetch_Decode_Out(2 DOWNTO 0) & Fetch_Decode_Out(5 DOWNTO 3) & Fetch_Decode_Out(8 DOWNTO 6) & Decode_RS2_Data & Decode_RS1_Data;
-    Decode_Execute_Reset <= RST OR (BranchOut AND Decode_Execute_Out(117)) OR Exception_Out_Signal;
+    Decode_Execute_Reset <= RST OR (BranchOut AND Decode_Execute_Out(117)) OR Exception_Out_Signal OR loadUse;
     Decode_Execute_Enable <= NOT (IntrerruptFSM_Stall);
 
     DECODE_EXECUTE : MyRegister GENERIC MAP(163) PORT MAP(CLK, Decode_Execute_Reset, Decode_Execute_Enable, Decode_Execute_In, Decode_Execute_Out);
@@ -449,9 +453,9 @@ BEGIN
     Execute_Controls <= Decode_Execute_Out(125) & Decode_Execute_Out(115 DOWNTO 114);
 
     Forwarding_Unit : FU PORT MAP(
-        MEMORY_READ => Execute_Memory_Out(83),
-        REG_WRITE1 => Execute_Memory_Out(78),
-        ADDRESS_SELECTOR => Execute_Memory_Out(76),
+        MEMORY_READ => Decode_Execute_Out(124),
+        REG_WRITE1 => Decode_Execute_Out(119),
+        ADDRESS_SELECTOR => Decode_Execute_Out(113),
 
         CURR_ALU_SRC_1 => Decode_Execute_Out(66 DOWNTO 64),
         CURR_ALU_SRC_2 => Decode_Execute_Out(69 DOWNTO 67),
@@ -479,6 +483,10 @@ BEGIN
         IMMEDIATE_VALUE_NOT_INSTRUCTION => Decode_Execute_Out(159),
 
         ADDRESS_TO_BRANCH_TO => Fetch_Decode_Out(8 DOWNTO 6),
+        DECODE_ADDRESS_SRC_2 => Fetch_Decode_Out(5 DOWNTO 3),
+
+        CURR_DECODE_NEEDS_SRC_1 => ValidRS1,
+        CURR_DECODE_NEEDS_SRC_2 => ValidRS2,
 
         MUX_1_SELECTOR => FURsrc1,
         MUX_2_SELECTOR => FURsrc2,
@@ -489,7 +497,7 @@ BEGIN
         LOAD_USE => loadUse
     );
 
-    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls, forwardForMemory, Execute_Memory_Out(31 DOWNTO 0), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(102), Memory_WB_Out(73 DOWNTO 70), Decode_Execute_Out(159), FURsrc1, FURsrc2, FUSwapStore, Decode_Execute_Out(120), Execute_RS1_Data, Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Output_Port);
+    Execution1 : Execution PORT MAP(Decode_Execute_Out(31 DOWNTO 0), Decode_Execute_Out(63 DOWNTO 32), Decode_Execute_Out(104 DOWNTO 73), Decode_Execute_Out(110 DOWNTO 105), Execute_Controls, Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(31 DOWNTO 0), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Input_Port, clk, rst, Memory_WB_Out(102), Memory_WB_Out(73 DOWNTO 70), Decode_Execute_Out(159), FURsrc1, FURsrc2, FUSwapStore, Decode_Execute_Out(120), Execute_RS1_Data, Execute_RS2_Data, Execute_Alu_Result, Execute_Flags, Output_Port);
 
     -- EM_D <= RS2_DATA & ALU_RESULT & FLAGS & RS1 & RS2 & RDEST & CONTROLS & PC & INT & SP;
 
@@ -503,6 +511,7 @@ BEGIN
     EXECUTE_MEMORY : MyRegister GENERIC MAP(149) PORT MAP(CLK, Execute_Memory_Reset, '1', Execute_Memory_In, Execute_Memory_Out);
 
     EPC1 : EPC PORT MAP(
+        clk => clk,
         OVERFLOW_PC => Decode_Execute_Out(158 DOWNTO 127),
         PROTECTED_PC => Execute_Memory_Out(115 DOWNTO 84),
         OVERFLOW_FLAG => Execute_Flags(3),
@@ -511,7 +520,7 @@ BEGIN
         EPC_FLAG => EPC_FLAG
     );
 
-    Exception_Out_Signal <= Execute_Flags(3) OR Exception; 
+    Exception_Out_Signal <= Execute_Flags(3) OR Exception;
     Exception_Out <= Exception_Out_Signal;
 
     -- The concatenation of the bits is as follows:
@@ -525,8 +534,6 @@ BEGIN
     -- Int 116
     -- SP 148-117
     Memory1 : Memory PORT MAP(clk, rst, Execute_Memory_Out(31 DOWNTO 0), Execute_Memory_Out(63 DOWNTO 32), Execute_Memory_Out(67 DOWNTO 64), Execute_Memory_Out(83 DOWNTO 74), Execute_Memory_Out(115 DOWNTO 84), Execute_Memory_Out(116), Execute_Memory_Out(148 DOWNTO 117), IntrerruptFSM_FlagsOrPC, Exception, Memory_Mem_Out);
-
-    Mux21 : Mux2 GENERIC MAP(32) PORT MAP(Execute_Memory_Out(83), Execute_Memory_Out(63 DOWNTO 32), Memory_Mem_Out, forwardForMemory);
 
     Memory_WB_Reset <= RST OR Exception_Out_Signal;
     Memory_WB_In <= IntrerruptFSM_FlagsOrPC & Execute_Memory_Out(83) & Execute_Memory_Out(78 DOWNTO 77) & Execute_Memory_Out(75 DOWNTO 74) & Memory_Mem_Out & Execute_Memory_Out(73 DOWNTO 71) & Execute_Memory_Out(70 DOWNTO 68) & Execute_Memory_Out(63 DOWNTO 32) & Execute_Memory_Out(31 DOWNTO 0);

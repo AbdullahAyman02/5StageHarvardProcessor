@@ -26,7 +26,7 @@ STD R2,200(R5)   #M[210]=5 - address is hexa
 
 STD R1,201(R5)   #M[211]=19 - address is hexa
 LDD R3,201(R5)   #R3=19
-LDD R4,200(R5)   #R4=5
+LDD R4,200(R5)   #R4=190005
 # Load use & memory to ALU
 ADD R5, R4, R3   #R5=1E
 
