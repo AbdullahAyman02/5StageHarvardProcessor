@@ -14,6 +14,7 @@ ENTITY PC IS
         ret_rti_m : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
         immediate: IN STD_LOGIC;
         ret_rti_stall: IN STD_LOGIC;
+        loadUse : IN STD_LOGIC;
         inst_address : OUT STD_LOGIC_VECTOR(n - 1 DOWNTO 0)
     );
 END ENTITY PC;
@@ -32,7 +33,7 @@ BEGIN
             ELSIF rst_counter = 2 THEN
                 curr_address <= rst_m & curr_address(15 DOWNTO 0);
                 rst_counter := rst_counter - 1;
-            ELSIF int = '1' AND int_counter = 0 AND immediate = '0' AND ret_rti_stall = '0' THEN
+            ELSIF int = '1' AND int_counter = 0 AND immediate = '0' AND ret_rti_stall = '0' AND loadUse = '0' THEN
                 int_counter := 2;
                 curr_address <= "0000000000000000" & int_m;
             ELSIF int_counter = 2 THEN

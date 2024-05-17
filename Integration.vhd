@@ -36,6 +36,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             immediate : IN STD_LOGIC;
             ret_rti_stall : IN STD_LOGIC;
             exception : IN STD_LOGIC;
+            loadUse : IN STD_LOGIC;
 
             Instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             PC_Address_out : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
@@ -85,7 +86,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             ALU_result : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
             Flags : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
             Output_port : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
-            zero_flag : out std_logic
+            zero_flag : OUT STD_LOGIC
         );
     END COMPONENT;
     COMPONENT Memory IS
@@ -208,6 +209,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             decodeConditionalBranch : IN STD_LOGIC;
             intFSM : IN STD_LOGIC;
             immediate : IN STD_LOGIC;
+            loadUse : IN STD_LOGIC;
             latchedInterrupt : OUT STD_LOGIC
         );
     END COMPONENT;
@@ -377,7 +379,7 @@ BEGIN
     Fetch_Int <= int OR LatchedInterrupt;
 
     -- Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, x"00000000", BranchOut, Fetch_Instruction, Fetch_PC, PC_To_Store);
-    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, Fetch_Int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, CorrectionAddress, BranchOut, Fetch_Decode_Out(15), RetRtiCounterStall, Exception_Out_Signal, Fetch_Instruction, Fetch_PC, PC_To_Store);
+    Fetch1 : Fetch PORT MAP(clk, rst, PC_Enable, Fetch_Int, WB_Ret_rti, WB_DATA1_TO_DECODE, TwoBitPCSelector, Decode_RS1_Data, Execute_RS1_Data, CorrectionAddress, BranchOut, Fetch_Decode_Out(15), RetRtiCounterStall, Exception_Out_Signal, loadUse, Fetch_Instruction, Fetch_PC, PC_To_Store);
 
     BranchInExecute <= BranchOut AND Decode_Execute_Out(117);
     RetRtiCounter1 : RetRtiCounter PORT MAP(clk, rst, Decode_Controls(1), '1', BranchInExecute, RetRtiCounterStall);
@@ -406,6 +408,7 @@ BEGIN
         decodeConditionalBranch => Decode_Controls(5),
         intFSM => IntrerruptFSM_Stall,
         immediate => Fetch_Decode_Out(15),
+        loadUse => loadUse,
         latchedInterrupt => LatchedInterrupt
     );
 
@@ -465,8 +468,8 @@ BEGIN
 
         CURR_DEST => Decode_Execute_Out(72 DOWNTO 70),
 
-        CURR_ALU_USES_DEST => Execute_Memory_Out(119),
-        CURR_ALU_IS_SWAP => Execute_Memory_Out(118),
+        CURR_ALU_USES_DEST => Decode_Execute_Out(119),
+        CURR_ALU_IS_SWAP => Decode_Execute_Out(118),
 
         PREV_ALU_DEST => Execute_Memory_Out(73 DOWNTO 71),
         PREV_MEM_DEST => Memory_WB_Out(69 DOWNTO 67),

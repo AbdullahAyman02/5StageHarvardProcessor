@@ -43,6 +43,12 @@ BEGIN
                     push_address <= STD_LOGIC_VECTOR(unsigned(push_address) - 2);
                 END IF;
             END IF;
+        ELSIF rising_edge(clk) THEN
+            IF addressSelector = '1' AND loadUse = '0' THEN
+                IF NOT (func(2) = '1' AND func(1) = '0' AND int /= '1') THEN
+                    stackPointer <= push_address;
+                END IF;
+            END IF;
         END IF;
     END PROCESS;
 

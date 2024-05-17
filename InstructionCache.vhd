@@ -10,6 +10,7 @@ ENTITY InstructionCache IS
         int : IN STD_LOGIC;
         immediate : IN STD_LOGIC;
         ret_rti_stall : IN STD_LOGIC;
+        loadUse : IN STD_LOGIC;
         rst_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
         int_address : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
         instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
@@ -31,7 +32,7 @@ BEGIN
         ELSIF falling_edge(clk) AND rst_counter = 2 THEN
             rst_address <= inst(1);
             rst_counter := 1;
-        ELSIF int = '1' AND int_counter = 0 AND immediate = '0' AND ret_rti_stall = '0' THEN
+        ELSIF int = '1' AND int_counter = 0 AND immediate = '0' AND ret_rti_stall = '0' AND loadUse = '0' THEN
             int_counter := 2;
             int_address <= inst(2);
         ELSIF falling_edge(clk) AND int_counter = 2 THEN
