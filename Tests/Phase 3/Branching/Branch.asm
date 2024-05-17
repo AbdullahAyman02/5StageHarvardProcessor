@@ -35,13 +35,13 @@ IN R3             # this statement shouldn't be executed, C-->1
 
 #check on flag updated on jump
 .ORG 50
-JZ R1            #shouldn't be taken
+JZ R1            #shouldn't be taken // prediction taken
 
 # Check on flag updated on ALU operations
 NOT R5           #R5=FFFF_FFFF, Z= 0, C--> not change, N=1
 CMP R5, R5       # Z=1, N=0
 IN R1            #R1=60
-JZ R1            #jump taken, Z=1
+JZ R1            #jump taken, Z=1 //prediction not taken
 ADD R1, R2, R3  # should not be executed
 
 .ORG 60
