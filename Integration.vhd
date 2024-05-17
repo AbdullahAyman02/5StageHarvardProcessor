@@ -465,8 +465,8 @@ BEGIN
 
         CURR_DEST => Decode_Execute_Out(72 DOWNTO 70),
 
-        CURR_ALU_USES_DEST => Execute_Memory_Out(119),
-        CURR_ALU_IS_SWAP => Execute_Memory_Out(118),
+        CURR_ALU_USES_DEST => Decode_Execute_Out(119),
+        CURR_ALU_IS_SWAP => Decode_Execute_Out(118),
 
         PREV_ALU_DEST => Execute_Memory_Out(73 DOWNTO 71),
         PREV_MEM_DEST => Memory_WB_Out(69 DOWNTO 67),
