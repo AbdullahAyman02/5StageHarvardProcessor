@@ -23,7 +23,7 @@ BEGIN
    
     MEM_READ                <= '1'  WHEN ((OPCODE = "100" AND FUNCTION_BITS(1) = '0') OR (OPCODE = "110" AND FUNCTION_BITS(2) = '1')) 
                                     ELSE '0';
-    MEM_WRITE               <= '1'  WHEN ((OPCODE = "100" AND FUNCTION_BITS(1) = '1') OR (OPCODE = "110" AND FUNCTION_BITS(2) = '0')) 
+    MEM_WRITE               <= '1'  WHEN ((OPCODE = "100" AND FUNCTION_BITS(1) = '1') OR (OPCODE = "110" AND FUNCTION_BITS(2) = '0') OR (OPCODE = "101" AND FUNCTION_BITS(0) = '1')) 
                                     ELSE '0';
    
     SELECT_PC               <= '1'  WHEN (OPCODE = "110" AND FUNCTION_BITS(2) = '0') 

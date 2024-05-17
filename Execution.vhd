@@ -15,6 +15,10 @@ Entity Execution is
         Rti : in std_logic;
         Rti_flag : in std_logic_vector(3 downto 0);
         Imm : in std_logic; -- will be removed after phase 1
+        Rscrc1_address : in std_logic_vector(2 downto 0);
+        Rscrc2_address : in std_logic_vector(2 downto 0);
+        Rsrc_swap_store : in std_logic_vector(2 downto 0);
+        Free_signal : in std_logic;
 
         RS1_data_out : out std_logic_vector(31 downto 0);
         RS2_data_out : out std_logic_vector(31 downto 0);
@@ -64,17 +68,16 @@ Architecture execution_arch of Execution is
 
     signal operand1_out, operand2_out, store_swap_out, alu_out_result, alu_or_input: std_logic_vector(31 downto 0); 
     signal alu_flags, flag_register_flags : std_logic_vector(3 downto 0);
-    signal temp_selector : std_logic_vector(2 downto 0); -- should be removed after phase 1
 
 begin
 
-temp_selector <= "00" & Imm; -- should be removed after phase 1
-
-Mux8_1: Mux8 generic map(32) port map ("000", RS1_data, mem_data_1, mem_data_2, wb_data_1, wb_data_2, x"00000000", x"00000000", x"00000000", operand1_out);
-Mux8_2: Mux8 generic map(32) port map (temp_selector, RS2_data, Immediate_value, mem_data_1, mem_data_2, wb_data_1, wb_data_2, x"00000000", x"00000000", operand2_out);
-Mux8_3: Mux8 generic map(32) port map ("000", RS2_data, mem_data_1, mem_data_2, wb_data_1, wb_data_2, x"00000000", x"00000000", x"00000000", store_swap_out);
+Mux8_1: Mux8 generic map(32) port map (Rscrc1_address, mem_data_1, mem_data_2, wb_data_1, wb_data_2, RS1_data, RS1_data, RS1_data, RS1_data, operand1_out);
+Mux8_2: Mux8 generic map(32) port map (Rscrc2_address, mem_data_1, mem_data_2, wb_data_1, wb_data_2, RS2_data, RS2_data, Immediate_value, RS2_data , operand2_out);
+Mux8_3: Mux8 generic map(32) port map (Rsrc_swap_store, mem_data_1, mem_data_2, wb_data_1, wb_data_2, RS2_data, RS2_data, RS2_data, RS2_data, store_swap_out);
 
 Mux2_1: Mux2 generic map(32) port map (Controls(1), alu_out_result, Input_port, alu_or_input);
+
+Mux2_free : Mux2 generic map(32) port map (Free_signal, store_swap_out, x"00000000", RS2_data_out);
 
 FlagRegister_1: FlagRegister port map (Clock, Reset, Rti, alu_flags, Rti_flag, flag_register_flags);
 

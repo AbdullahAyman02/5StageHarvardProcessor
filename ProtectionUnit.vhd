@@ -29,7 +29,7 @@ BEGIN
             ELSE
                 MemoryEn <= '0';
             END IF;
-            IF (memory(to_integer(unsigned(Address))) = '1' OR memory(to_integer(unsigned(Address) + 1)) = '1') AND MemWrite = '1' THEN
+            IF (memory(to_integer(unsigned(Address))) = '1' OR memory(to_integer(unsigned(Address) + 1)) = '1') AND MemWrite = '1' AND Free ='0' THEN
                 Exception <= '1';
             ELSE
                 Exception <= '0';
