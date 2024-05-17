@@ -88,17 +88,53 @@ run
 run
 run
 run
+force -freeze sim:/integration/int 1 0
+run
+force -freeze sim:/integration/int 0 0
 run
 run
 run
-
+run
+run
+run
+force -freeze sim:/integration/Input_Port 'h5 0
+run
+run
+run
+run
+run
+run
 run
 run
 force -freeze sim:/integration/Input_Port 'h700 0
 run
 run
 run
+force -freeze sim:/integration/int 1 0
 run
+force -freeze sim:/integration/int 0 0
+run
+run
+run
+run
+force -freeze sim:/integration/Input_Port 'h5 0
+run
+run
+run
+run
+run
+run
+run
+run
+run
+run
+run
+run
+run
+run
+force -freeze sim:/integration/int 1 0
+run
+force -freeze sim:/integration/int 0 0
 run
 run
 run
