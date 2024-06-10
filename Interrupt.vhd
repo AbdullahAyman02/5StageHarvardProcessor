@@ -13,6 +13,7 @@ ENTITY Interrupt IS
         intFSM : IN STD_LOGIC;
         immediate : IN STD_LOGIC;
         loadUse : IN STD_LOGIC;
+        dataHazardInDecode : IN STD_LOGIC;
         latchedInterrupt : OUT STD_LOGIC
     );
 END Interrupt;
@@ -26,7 +27,7 @@ BEGIN
         IF reset = '1' THEN
             enable <= '0';
         ELSIF rising_edge(clk) THEN
-            IF (retRtiCounter = '1' AND previousLatchedInterrupt = '1') OR decodeConditionalBranch = '1' OR intFSM = '1' OR immediate = '1' OR loadUse = '1' THEN
+            IF (retRtiCounter = '1' AND previousLatchedInterrupt = '1') OR decodeConditionalBranch = '1' OR intFSM = '1' OR immediate = '1' OR loadUse = '1' OR dataHazardInDecode = '1' THEN
                 enable <= '1';
             ELSE
                 enable <= '0';

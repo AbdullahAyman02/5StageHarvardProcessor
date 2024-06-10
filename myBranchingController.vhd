@@ -15,7 +15,8 @@ ENTITY myBranchingController IS
         prediction_out : OUT STD_LOGIC; -- 1 bit prediction of the branch instruction in decode stage, can be 0 or 1 and it toggles
         two_bit_PC_selector : OUT STD_LOGIC_VECTOR(1 DOWNTO 0); -- 2 bit selector for the PC, 00 for decode branch update, 01 for execute branch update, 10 for register address, 11 for normal PC update +2
         will_branch_in_decode : OUT STD_LOGIC; -- 1 if the branch will be taken in decode stage, 0 otherwise
-        branch_out : OUT STD_LOGIC
+        branch_out : OUT STD_LOGIC;
+        data_hazard_in_decode : OUT STD_LOGIC
     );
 END myBranchingController;
 
@@ -51,6 +52,7 @@ BEGIN
                         IF (zero_flag = '1') THEN
                             IF (was_there_a_data_hazard_in_decode = '1') THEN
                                 two_bit_PC_selector_var := "01";
+                                was_there_a_data_hazard_in_decode <= '0';
                             ELSE
                                 prediction_bit <= '1';
                                 two_bit_PC_selector_var := "10"; 
@@ -98,4 +100,5 @@ BEGIN
         branch_out <= two_bit_PC_selector_var(0) NAND two_bit_PC_selector_var(1);
     END PROCESS;
     prediction_out <= prediction_bit;
+    data_hazard_in_decode <= was_there_a_data_hazard_in_decode;
 END branching_controller_arch;

@@ -169,8 +169,8 @@ ARCHITECTURE Integration_arch OF Integration IS
             prediction_out : OUT STD_LOGIC; -- 1 bit prediction of the branch instruction in decode stage, can be 0 or 1 and it toggles
             two_bit_PC_selector : OUT STD_LOGIC_VECTOR(1 DOWNTO 0); -- 2 bit selector for the PC, 00 for decode branch update, 01 for execute branch update, 10 for register address, 11 for normal PC update +2
             will_branch_in_decode : OUT STD_LOGIC; -- 1 if the branch will be taken in decode stage, 0 otherwise
-            branch_out : OUT STD_LOGIC
-
+            branch_out : OUT STD_LOGIC;
+            data_hazard_in_decode : OUT STD_LOGIC
         );
     END COMPONENT;
 
@@ -210,6 +210,7 @@ ARCHITECTURE Integration_arch OF Integration IS
             intFSM : IN STD_LOGIC;
             immediate : IN STD_LOGIC;
             loadUse : IN STD_LOGIC;
+            dataHazardInDecode : IN STD_LOGIC;
             latchedInterrupt : OUT STD_LOGIC
         );
     END COMPONENT;
@@ -374,6 +375,8 @@ ARCHITECTURE Integration_arch OF Integration IS
 
     SIGNAL zeroFlag : STD_LOGIC;
 
+    SIGNAL dataHazardInDecode : STD_LOGIC;
+
 BEGIN
     PC_Enable <= NOT (IntrerruptFSM_Stall OR loadUse);
     Fetch_Int <= int OR LatchedInterrupt;
@@ -409,6 +412,7 @@ BEGIN
         intFSM => IntrerruptFSM_Stall,
         immediate => Fetch_Decode_Out(15),
         loadUse => loadUse,
+        dataHazardInDecode => dataHazardInDecode,
         latchedInterrupt => LatchedInterrupt
     );
 
@@ -428,7 +432,7 @@ BEGIN
     -- bits 49 -> Rst
     Decode1 : Decode PORT MAP(clk, rst, Fetch_Decode_Out(15 DOWNTO 0), Fetch_Decode_Out(47 DOWNTO 16), Fetch_Decode_Out(48), Memory_WB_Out(105), Memory_WB_Out(104), Memory_WB_Out(69 DOWNTO 67), Memory_WB_Out(66 DOWNTO 64), WB_DATA1_TO_DECODE, Memory_WB_Out(31 DOWNTO 0), Fetch_Instruction, Fetch_Decode_Out(49), Decode_RS1_Data, Decode_RS2_Data, Decode_Immediate_value, Decode_Controls, ValidRS1, ValidRS2);
 
-    BranchingController1 : myBranchingController PORT MAP(clk, Decode_Controls(6), Decode_Execute_Out(117), Decode_Controls(5), Decode_Execute_Out(116), Decode_Execute_Out(160), FUCanBranch, zeroFlag, '0', PredictionOut, TwoBitPCSelector, BranchedInDecode, BranchOut);
+    BranchingController1 : myBranchingController PORT MAP(clk, Decode_Controls(6), Decode_Execute_Out(117), Decode_Controls(5), Decode_Execute_Out(116), Decode_Execute_Out(160), FUCanBranch, zeroFlag, '0', PredictionOut, TwoBitPCSelector, BranchedInDecode, BranchOut, dataHazardInDecode);
 
     BranchingRegister1 : branchingRegister PORT MAP(clk, Decode_RS1_Data, Fetch_Decode_Out(47 DOWNTO 16), PredictionOut, CorrectionAddress);
 
