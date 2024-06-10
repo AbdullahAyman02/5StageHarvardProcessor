@@ -16,7 +16,7 @@ This 5-stage pipelined processor, built with Harvard architecture, enhances perf
 
 Here is the schematic diagram of our processor:
 
-https://drive.google.com/file/d/1XO8V1skts5mGuL41N_zzHYwbW1lZ3_6u/view?usp=sharing
+[https://drive.google.com/file/d/1XO8V1skts5mGuL41N_zzHYwbW1lZ3_6u/view?usp=sharing](https://drive.google.com/file/d/1N3pqn6sqh9jXXmDwiUJi436mi0tm39zQ/view?usp=sharing)
 
 # References
 You can find more about the project specifics in the project document and final report.
